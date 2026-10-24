@@ -49,7 +49,7 @@ input, textarea { font: inherit; }
 
 .main { flex: 1; min-height: 0; display: flex; position: relative; }
 #map { flex: 1; min-width: 0; background: #E6E2DA; }
-.panel { width: var(--panel); flex: none; background: #fff; border-inline-start: 1px solid #E4DED5; display: flex; flex-direction: column; min-height: 0; }
+.panel { position: relative; width: var(--panel); flex: none; background: #fff; border-inline-start: 1px solid #E4DED5; display: flex; flex-direction: column; min-height: 0; }
 
 .filters { padding: 12px 14px 8px; border-bottom: 1px solid #EEE8DF; }
 .grp { margin-bottom: 8px; }
