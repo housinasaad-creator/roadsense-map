@@ -1,4 +1,5 @@
 :root {
+  color-scheme: only light;
   --ink: #0E1014; --ink2: #171B22; --line: #262C36; --paper: #F6F3EE; --text: #14171C; --muted: #6A707A;
   --coral: #FF6A3D; --red: #FF4B3E; --gold: #FFC21A; --blue: #4DA3FF; --purple: #B36BFF; --green: #25D366; --orange: #FF9F1C;
   --radius: 14px; --panel: 380px;
