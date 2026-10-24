@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="robots" content="noindex, nofollow">
+<title>خريطة الطرق</title>
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- sign in -->
+<section id="login" class="login hidden">
+  <form id="loginForm" class="card" autocomplete="on">
+    <img class="logo" src="assets/logo.png" alt="">
+    <h1 data-i="appTitle"></h1>
+    <p class="sub" data-i="loginSub"></p>
+    <label><span data-i="email"></span><input id="email" type="email" autocomplete="username" required></label>
+    <label><span data-i="password"></span><input id="password" type="password" autocomplete="current-password" required></label>
+    <button class="btn primary" type="submit" data-i="signIn"></button>
+    <p id="loginErr" class="err" role="alert"></p>
+    <div class="langs"><button type="button" data-lang="ar">العربية</button><button type="button" data-lang="tr">Türkçe</button><button type="button" data-lang="en">English</button></div>
+  </form>
+</section>
+
+<!-- dashboard -->
+<main id="app" class="app hidden">
+  <header class="bar">
+    <div class="brand"><img src="assets/logo.png" alt=""><b data-i="appTitle"></b><span id="demoTag" class="demo hidden" data-i="demo"></span></div>
+    <div class="counts" id="counts"></div>
+    <div class="actions">
+      <button class="icon" id="btnFilters" title="" aria-label="filters">☰</button>
+      <button class="icon" id="btnExport" data-i-title="export">⤓</button>
+      <div class="langs small"><button data-lang="ar">ع</button><button data-lang="tr">TR</button><button data-lang="en">EN</button></div>
+      <button class="icon" id="btnOut" data-i-title="signOut">⎋</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div id="map" aria-label="map"></div>
+
+    <aside id="panel" class="panel">
+      <div id="filters" class="filters">
+        <div class="grp"><div class="gt" data-i="fType"></div><div class="chips" id="chipType"></div></div>
+        <div class="grp"><div class="gt" data-i="fStatus"></div><div class="chips" id="chipStatus"></div></div>
+        <div class="grp"><div class="gt" data-i="fPeriod"></div><div class="chips" id="chipPeriod"></div></div>
+      </div>
+      <div id="listHead" class="lh"><b data-i="latest"></b><span id="listCount"></span></div>
+      <div id="list" class="list"></div>
+      <div id="detail" class="detail hidden"></div>
+    </aside>
+  </div>
+  <div id="toast" class="toast hidden"></div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
