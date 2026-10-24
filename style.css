@@ -75,10 +75,10 @@ input, textarea { font: inherit; }
 .badge.rejected { background: #E8E8E8; color: #666; }
 .empty { padding: 30px 14px; text-align: center; color: var(--muted); }
 
-.detail { position: absolute; inset: 0; background: #fff; overflow-y: auto; padding: 12px 14px 20px; z-index: 5; }
+.detail { position: absolute; inset: 0; background: #fff; overflow-y: auto; overflow-x: hidden; min-width: 0; padding: 12px 14px 20px; z-index: 5; }
 .back { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); padding: 4px 0 8px; font-size: 13px; }
-.photo { width: 100%; aspect-ratio: 4 / 3; border-radius: 14px; background: #ECE7DE; display: grid; place-items: center; color: var(--muted); overflow: hidden; margin-bottom: 10px; }
-.photo img { width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; }
+.photo { position: relative; width: 100%; max-width: 100%; aspect-ratio: 4 / 3; border-radius: 14px; background: #ECE7DE; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--muted); overflow: hidden; margin-bottom: 10px; }
+.photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; }
 .detail h2 { font-size: 21px; display: flex; align-items: center; gap: 9px; margin-bottom: 2px; }
 .kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-size: 13.3px; margin: 8px 0 10px; }
 .kv dt { color: var(--muted); } .kv dd { direction: ltr; text-align: start; }
