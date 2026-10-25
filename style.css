@@ -40,6 +40,9 @@ input, textarea { font: inherit; }
 .cnt { flex: none; display: flex; align-items: center; gap: 7px; padding: 4px 12px; border-radius: 22px; background: #1E232C; border: 1px solid #2B323D; font-size: 13px; white-space: nowrap; }
 .cnt i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 .cnt b { font-size: 15px; }
+.cnt.tp { cursor: pointer; min-height: 34px; color: #F1F2F4; touch-action: manipulation; }
+.cnt.tp:hover { background: #2A303B; }
+.cnt.tp.on { background: #F6F3EE; color: #14171C; border-color: #F6F3EE; }
 .actions { display: flex; align-items: center; gap: 6px; flex: none; }
 .icon { width: 36px; height: 36px; border-radius: 10px; background: #1E232C; border: 1px solid #2B323D; font-size: 17px; line-height: 1; }
 .icon:hover { background: #2A303B; }

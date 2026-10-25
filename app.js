@@ -161,12 +161,24 @@ function render() {
   renderCounts(); renderList(rows); renderChips();
 }
 function renderCounts() {
-  const all = [...state.rows.values()]; const by = (f) => all.filter(f).length;
-  const c = (label, n, color) => `<div class="cnt"><i style="background:${color}"></i>${label} <b>${n}</b></div>`;
-  $('counts').innerHTML = c(t('new'), by((r) => r.status === 'new'), '#FF6A3D') + c(t('in_progress'), by((r) => r.status === 'in_progress'), '#FF9F1C') + c(t('fixedTotal'), state.fixedTotal + by((r) => r.status === 'fixed'), '#25D366')
-    + c(t('pothole'), by((r) => r.type === 'pothole' && r.status !== 'rejected'), COLORS.pothole) + c(t('bump'), by((r) => r.type === 'bump' && r.status !== 'rejected'), COLORS.bump)
-    + c(t('crack'), by((r) => r.type.startsWith('crack') && r.status !== 'rejected'), COLORS.crack)
-    + ['electric', 'water', 'sewer', 'telecom'].map((k) => c(t(k), by((r) => r.type === k && r.status !== 'rejected'), COLORS[k])).join('');
+  const all = [...state.rows.values()]; const by = (f) => all.filter(f).length; const live = (r) => r.status !== 'rejected';
+  const bar = $('counts'); bar.innerHTML = '';
+  // the categories: tap one to see only it, tap "All" to see everything (same filter as the chips in the side panel)
+  const tap = (key, label, n, color) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'cnt tp' + (state.type === key ? ' on' : '');
+    b.innerHTML = `<i style="background:${color}"></i><span></span> <b>${n}</b>`; b.querySelector('span').textContent = label;
+    b.onclick = () => { state.type = key; render(); fitVisible(); };
+    bar.appendChild(b);
+  };
+  const info = (label, n, color) => {
+    const d = document.createElement('div'); d.className = 'cnt';
+    d.innerHTML = `<i style="background:${color}"></i><span></span> <b>${n}</b>`; d.querySelector('span').textContent = label; bar.appendChild(d);
+  };
+  tap('all', t('all'), by(live), '#B9B2A6');
+  TYPES.forEach((k) => tap(k, t(k), by((r) => r.type === k && live(r)), COLORS[k]));
+  info(t('new'), by((r) => r.status === 'new'), '#FF6A3D');
+  info(t('in_progress'), by((r) => r.status === 'in_progress'), '#FF9F1C');
+  info(t('fixedTotal'), state.fixedTotal + by((r) => r.status === 'fixed'), '#25D366');
 }
 function renderList(rows) {
   $('listCount').textContent = `${rows.length} / ${state.rows.size}`;
