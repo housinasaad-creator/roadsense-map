@@ -83,6 +83,7 @@ input, textarea { font: inherit; }
 .kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-size: 13.3px; margin: 8px 0 10px; }
 .kv dt { color: var(--muted); } .kv dd { direction: ltr; text-align: start; }
 .kv dd.rtl { direction: inherit; }
+.kv dd { overflow-wrap: anywhere; }
 .links { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .lnk { padding: 7px 13px; border-radius: 10px; background: #14171C; color: #fff; font-size: 13px; text-decoration: none; }
 .lnk.alt { background: #EFE9DF; color: #14171C; }
