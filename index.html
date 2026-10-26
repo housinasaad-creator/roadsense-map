@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css">
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 
@@ -37,6 +37,7 @@
     <div class="counts" id="counts"></div>
     <div class="actions">
       <button class="icon" id="btnFilters" title="" aria-label="filters">☰</button>
+      <button class="icon hidden" id="btnUsers" data-i-title="usersTitle">👥</button>
       <button class="icon" id="btnExport" data-i-title="export">⤓</button>
       <div class="langs small"><button data-lang="ar">ع</button><button data-lang="tr">TR</button><button data-lang="en">EN</button></div>
       <button class="icon" id="btnOut" data-i-title="signOut">⎋</button>
@@ -58,13 +59,14 @@
     </aside>
   </div>
   <div id="toast" class="toast hidden"></div>
+  <div id="usersModal" class="modal hidden"><div class="sheet"><div class="mh"><b data-i="usersTitle"></b><button class="x" id="usersClose" type="button">✕</button></div><div id="usersBody"></div></div></div>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=6"></script>
-<script src="demo_points.js?v=6"></script>
-<script src="app.js?v=6"></script>
+<script src="config.js?v=8"></script>
+<script src="demo_points.js?v=8"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>

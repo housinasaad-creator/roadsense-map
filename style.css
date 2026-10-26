@@ -124,3 +124,29 @@ textarea { width: 100%; min-height: 62px; border-radius: 10px; border: 1px solid
   .panel.showfilters .filters { display: block; }
   .detail { position: absolute; }
 }
+
+/* ---------- administrators: app users */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 2000; display: grid; place-items: center; padding: 14px; }
+.sheet { background: #fff; width: min(660px, 100%); max-height: 92vh; overflow: auto; border-radius: 18px; padding: 14px 18px 20px; }
+.mh { display: flex; justify-content: space-between; align-items: center; font-size: 18px; margin-bottom: 8px; }
+.mh .x { width: 34px; height: 34px; border-radius: 10px; background: #EFE9DF; font-size: 15px; }
+.uform { background: #FCFAF7; border: 1px solid #E4DED5; border-radius: 14px; padding: 10px 12px 12px; margin-bottom: 10px; }
+.uform h3 { font-size: 15px; margin-bottom: 6px; }
+.urow { display: flex; gap: 6px; flex-wrap: wrap; }
+.urow input { flex: 1 1 130px; min-width: 0; padding: 9px 11px; border-radius: 10px; border: 1px solid #DAD3C8; background: #fff; }
+.btn2 { padding: 8px 13px; border-radius: 10px; background: #EFE9DF; color: #14171C; font-weight: 600; font-size: 13px; }
+.btn2.pri { background: var(--coral); color: #fff; }
+.btn2.warn { background: #FFE3DA; color: #B8431A; }
+.uhint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.ucode { background: #FFF9E8; border: 1.5px solid #F2D675; border-radius: 14px; padding: 10px 14px 12px; margin-bottom: 10px; }
+.ucode p { font-size: 13px; margin-bottom: 6px; }
+.ucode .big { font-size: 22px; font-weight: 800; letter-spacing: .5px; margin: 4px 0 8px; user-select: all; word-break: break-all; }
+.uitem { border: 1px solid #E4DED5; border-radius: 12px; padding: 9px 12px; margin-bottom: 8px; }
+.un { display: flex; align-items: center; gap: 8px; }
+.un b { font-size: 15px; }
+.um { font-size: 12.5px; color: var(--muted); margin: 2px 0 6px; }
+.ua { display: flex; gap: 6px; flex-wrap: wrap; }
+.ubadge { font-size: 11.5px; padding: 1px 9px; border-radius: 10px; background: #EFE9DF; color: #4A4F57; }
+.ubadge.active { background: #DDF6E6; color: #187A41; }
+.ubadge.waiting { background: #FFEFD2; color: #9A5B00; }
+.ubadge.revoked { background: #E8E8E8; color: #666; }

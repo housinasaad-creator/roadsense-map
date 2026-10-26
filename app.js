@@ -9,35 +9,47 @@ const T = {
   ar: {
     appTitle: 'خريطة الطرق', loginSub: 'لوحة متابعة بلاغات الطرق والخدمات', email: 'البريد الإلكتروني', password: 'كلمة المرور', signIn: 'دخول', signOut: 'خروج', export: 'تصدير جدول',
     demo: 'تجريبي', fType: 'النوع', fStatus: 'الحالة', fPeriod: 'الفترة', latest: 'أحدث البلاغات', errLogin: 'تعذّر الدخول: تحقق من البريد وكلمة المرور.',
-    pothole: 'حفرة', bump: 'مطب', crack: 'شق', crack_severe: 'شق خطير', electric: 'كهرباء', water: 'مياه', sewer: 'تمديدات صحية', telecom: 'اتصالات', other: 'أخرى', vnote: 'ملاحظة المتطوع',
+    pothole: 'حفرة', bump: 'مطب', crack: 'شق', crack_severe: 'شق خطير', electric: 'كهرباء', water: 'مياه', sewer: 'تمديدات صحية', telecom: 'اتصالات', other: 'أخرى', vnote: 'ملاحظة المتطوع', reporter: 'المبلّغ', usersTitle: 'مستخدمو التطبيق', newUser: 'مستخدم جديد', uName: 'اسم المستخدم', uCode: 'رمز التفعيل', uGen: 'توليد', uCreate: 'إنشاء',
+    uCodeShown: 'أعطِ المستخدم الاسم والرمز التالين. يظهر الرمز هنا مرة واحدة فقط، ويُحرق عند أول تفعيل على هاتف، فلا يعمل على هاتف آخر:', uCopy: 'نسخ', uCopied: 'تم النسخ',
+    uWaiting: 'بانتظار التفعيل', uActive: 'مفعّل على هاتف', uRevoked: 'موقوف', uReports: 'بلاغات', uLast: 'آخر نشاط', uReset: 'رمز جديد', uRevoke: 'إيقاف', uDelete: 'حذف',
+    uConfirmDelete: 'حذف هذا المستخدم؟ تبقى بلاغاته على الخريطة.', uConfirmReset: 'إصدار رمز جديد؟ سينفصل الهاتف الحالي ولن يستطيع الإرسال.', uConfirmRevoke: 'إيقاف هذا المستخدم؟ لن يستطيع هاتفه الإرسال.',
+    uTaken: 'هذا الاسم مستعمل', uBad: 'اسم أو رمز غير صالح (الاسم ٢–٣٠ حرفاً، الرمز ٦ أحرف على الأقل)', uErr: 'تعذّر تنفيذ العملية', uNone: 'لا يوجد مستخدمون بعد', uHint: 'رمز يعمل مرة واحدة على هاتف واحد، ويمكنك كتابته أو توليده.',
     new: 'جديد', in_progress: 'قيد الإصلاح', fixed: 'تم الإصلاح', rejected: 'مرفوض',
     today: 'اليوم', d7: '٧ أيام', d30: '٣٠ يوماً', all: 'الكل',
     time: 'الوقت', location: 'الإحداثيات', accuracy: 'دقة الموقع', confidence: 'ثقة الكاشف', source: 'المصدر', auto: 'كشف تلقائي', manual: 'يدوي (زر التقاط)', m: 'م',
     photo: 'الصورة', noPhoto: 'لا توجد صورة', loadingPhoto: 'جارٍ تحميل الصورة…', openMap: 'فتح في خرائط جوجل', directions: 'الاتجاهات', status: 'الحالة', note: 'ملاحظة للمتابعة (اختياري)', save: 'حفظ', saved: 'تم الحفظ', back: 'رجوع',
     by: 'آخر تغيير', confirmations: 'عدد التأكيدات', ageLine: 'مضى عليه {n} يوماً دون إصلاح', ageToday: 'بلاغ اليوم', age: 'عمر البلاغ', share: 'مشاركة الإحداثيات', whatsapp: 'واتساب', copied: 'نُسخت الإحداثيات', fixedTotal: 'أُصلح حتى الآن', undo: 'تراجع', fixedDone: 'سيُحذف البلاغ وصورته بعد', secs: 'ث', deleted: 'حُذف البلاغ وصورته', archiveHint: 'المُصلَح مخفي — فعّل «تم الإصلاح» لرؤية الأرشيف', newReport: 'بلاغ جديد', empty: 'لا توجد بلاغات بهذه الفلاتر', total: 'الإجمالي', shown: 'المعروض', loadErr: 'تعذّر تحميل البلاغات', saveErr: 'تعذّر الحفظ',
-    csvHead: ['المعرّف', 'الوقت', 'النوع', 'الحالة', 'خط العرض', 'خط الطول', 'الدقة (م)', 'الثقة', 'يدوي', 'رابط الخريطة', 'ملاحظة المتطوع', 'ملاحظة'],
+    csvHead: ['المعرّف', 'الوقت', 'النوع', 'الحالة', 'خط العرض', 'خط الطول', 'الدقة (م)', 'يدوي', 'المبلّغ', 'رابط الخريطة', 'ملاحظة المتطوع', 'ملاحظة'],
   },
   tr: {
     appTitle: 'Yol Haritası', loginSub: 'Yol ve hizmet bildirimleri takip paneli', email: 'E-posta', password: 'Parola', signIn: 'Giriş', signOut: 'Çıkış', export: 'Tabloyu indir',
     demo: 'DEMO', fType: 'Tür', fStatus: 'Durum', fPeriod: 'Dönem', latest: 'Son bildirimler', errLogin: 'Giriş yapılamadı: e-posta ve parolayı kontrol edin.',
-    pothole: 'Çukur', bump: 'Kasis', crack: 'Çatlak', crack_severe: 'Ciddi çatlak', electric: 'Elektrik', water: 'Su', sewer: 'Sıhhi tesisat', telecom: 'Telekom', other: 'Diğer', vnote: 'Gönüllü notu',
+    pothole: 'Çukur', bump: 'Kasis', crack: 'Çatlak', crack_severe: 'Ciddi çatlak', electric: 'Elektrik', water: 'Su', sewer: 'Sıhhi tesisat', telecom: 'Telekom', other: 'Diğer', vnote: 'Gönüllü notu', reporter: 'Bildiren', usersTitle: 'Uygulama kullanıcıları', newUser: 'Yeni kullanıcı', uName: 'Kullanıcı adı', uCode: 'Etkinleştirme kodu', uGen: 'Üret', uCreate: 'Oluştur',
+    uCodeShown: 'Kullanıcıya şu adı ve kodu verin. Kod burada yalnızca bir kez görünür ve ilk etkinleştirmede yanar; başka telefonda çalışmaz:', uCopy: 'Kopyala', uCopied: 'Kopyalandı',
+    uWaiting: 'Etkinleştirme bekliyor', uActive: 'Bir telefonda etkin', uRevoked: 'Durduruldu', uReports: 'bildirim', uLast: 'Son etkinlik', uReset: 'Yeni kod', uRevoke: 'Durdur', uDelete: 'Sil',
+    uConfirmDelete: 'Bu kullanıcı silinsin mi? Bildirimleri haritada kalır.', uConfirmReset: 'Yeni kod verilsin mi? Mevcut telefon bağlantısı kesilir.', uConfirmRevoke: 'Bu kullanıcı durdurulsun mu? Telefonu gönderemez.',
+    uTaken: 'Bu ad kullanılıyor', uBad: 'Geçersiz ad veya kod (ad 2–30 karakter, kod en az 6 karakter)', uErr: 'İşlem yapılamadı', uNone: 'Henüz kullanıcı yok', uHint: 'Tek telefonda bir kez çalışan kod; yazabilir veya üretebilirsiniz.',
     new: 'Yeni', in_progress: 'Onarımda', fixed: 'Onarıldı', rejected: 'Reddedildi',
     today: 'Bugün', d7: '7 gün', d30: '30 gün', all: 'Tümü',
     time: 'Zaman', location: 'Koordinat', accuracy: 'Konum doğruluğu', confidence: 'Dedektör güveni', source: 'Kaynak', auto: 'Otomatik tespit', manual: 'Elle (Yakala düğmesi)', m: 'm',
     photo: 'Fotoğraf', noPhoto: 'Fotoğraf yok', loadingPhoto: 'Fotoğraf yükleniyor…', openMap: 'Google Haritalar\'da aç', directions: 'Yol tarifi', status: 'Durum', note: 'Takip notu (isteğe bağlı)', save: 'Kaydet', saved: 'Kaydedildi', back: 'Geri',
     by: 'Son değişiklik', confirmations: 'Onay sayısı', ageLine: '{n} gündür onarılmadı', ageToday: 'Bugünün bildirimi', age: 'Bildirim yaşı', share: 'Koordinatları paylaş', whatsapp: 'WhatsApp', copied: 'Koordinatlar kopyalandı', fixedTotal: 'Şimdiye kadar onarılan', undo: 'Geri al', fixedDone: 'Bildirim ve fotoğrafı silinecek:', secs: 'sn', deleted: 'Bildirim ve fotoğrafı silindi', archiveHint: 'Onarılanlar gizli — arşiv için «Onarıldı»yı açın', newReport: 'Yeni bildirim', empty: 'Bu filtrelerle bildirim yok', total: 'Toplam', shown: 'Gösterilen', loadErr: 'Bildirimler yüklenemedi', saveErr: 'Kaydedilemedi',
-    csvHead: ['Kimlik', 'Zaman', 'Tür', 'Durum', 'Enlem', 'Boylam', 'Doğruluk (m)', 'Güven', 'Elle', 'Harita bağlantısı', 'Gönüllü notu', 'Not'],
+    csvHead: ['Kimlik', 'Zaman', 'Tür', 'Durum', 'Enlem', 'Boylam', 'Doğruluk (m)', 'Elle', 'Bildiren', 'Harita bağlantısı', 'Gönüllü notu', 'Not'],
   },
   en: {
     appTitle: 'Road Map', loginSub: 'Roads and city services reports dashboard', email: 'Email', password: 'Password', signIn: 'Sign in', signOut: 'Sign out', export: 'Export table',
     demo: 'DEMO', fType: 'Type', fStatus: 'Status', fPeriod: 'Period', latest: 'Latest reports', errLogin: 'Could not sign in: check the email and password.',
-    pothole: 'Pothole', bump: 'Speed bump', crack: 'Crack', crack_severe: 'Severe crack', electric: 'Electricity', water: 'Water', sewer: 'Plumbing / sewage', telecom: 'Telecom', other: 'Other', vnote: 'Volunteer note',
+    pothole: 'Pothole', bump: 'Speed bump', crack: 'Crack', crack_severe: 'Severe crack', electric: 'Electricity', water: 'Water', sewer: 'Plumbing / sewage', telecom: 'Telecom', other: 'Other', vnote: 'Volunteer note', reporter: 'Reported by', usersTitle: 'App users', newUser: 'New user', uName: 'Username', uCode: 'Activation code', uGen: 'Generate', uCreate: 'Create',
+    uCodeShown: 'Give the user this name and code. The code is shown here only once and is burnt at the first activation on a phone, so it cannot be used on another phone:', uCopy: 'Copy', uCopied: 'Copied',
+    uWaiting: 'Waiting for activation', uActive: 'Active on one phone', uRevoked: 'Revoked', uReports: 'reports', uLast: 'Last seen', uReset: 'New code', uRevoke: 'Revoke', uDelete: 'Delete',
+    uConfirmDelete: 'Delete this user? Their reports stay on the map.', uConfirmReset: 'Issue a new code? The current phone will be unbound and cannot send.', uConfirmRevoke: 'Revoke this user? Their phone will not be able to send.',
+    uTaken: 'This name is taken', uBad: 'Invalid name or code (name 2-30 characters, code at least 6)', uErr: 'The action failed', uNone: 'No users yet', uHint: 'A code that works once on one phone; type it or generate it.',
     new: 'New', in_progress: 'In progress', fixed: 'Fixed', rejected: 'Rejected',
     today: 'Today', d7: '7 days', d30: '30 days', all: 'All',
     time: 'Time', location: 'Coordinates', accuracy: 'GPS accuracy', confidence: 'Detector confidence', source: 'Source', auto: 'Automatic detection', manual: 'By hand (Capture button)', m: 'm',
     photo: 'Photo', noPhoto: 'No photo', loadingPhoto: 'Loading photo…', openMap: 'Open in Google Maps', directions: 'Directions', status: 'Status', note: 'Follow-up note (optional)', save: 'Save', saved: 'Saved', back: 'Back',
     by: 'Last change', confirmations: 'Confirmations', ageLine: 'Unrepaired for {n} days', ageToday: 'Reported today', age: 'Report age', share: 'Share coordinates', whatsapp: 'WhatsApp', copied: 'Coordinates copied', fixedTotal: 'Fixed so far', undo: 'Undo', fixedDone: 'The report and its photo will be deleted in', secs: 's', deleted: 'Report and photo deleted', archiveHint: 'Fixed reports are hidden — switch on "Fixed" to see the archive', newReport: 'New report', empty: 'No reports with these filters', total: 'Total', shown: 'Shown', loadErr: 'Could not load the reports', saveErr: 'Could not save',
-    csvHead: ['ID', 'Time', 'Type', 'Status', 'Latitude', 'Longitude', 'Accuracy (m)', 'Confidence', 'Manual', 'Map link', 'Volunteer note', 'Note'],
+    csvHead: ['ID', 'Time', 'Type', 'Status', 'Latitude', 'Longitude', 'Accuracy (m)', 'Manual', 'Reporter', 'Map link', 'Volunteer note', 'Note'],
   },
 };
 let lang = (() => { try { return localStorage.getItem('rs_lang') || 'ar'; } catch (_) { return 'ar'; } })();
@@ -102,7 +114,7 @@ function demoRows() {
     const p = pts[i % Math.max(1, pts.length)] || [34.5603 + (rnd() - .5) * .02, 38.2701 + (rnd() - .5) * .03];
     const list = notes[type], svc = !!list, age = rnd() * 20 * 86400000;
     return { id: 'demo-' + i, created_at: new Date(now - age).toISOString(), detected_at: new Date(now - age).toISOString(), type, lat: p[0], lon: p[1], accuracy_m: Math.round(4 + rnd() * 10),
-      confidence: svc || rnd() < .25 ? null : +(.3 + rnd() * .6).toFixed(2), manual: svc || rnd() < .25, photo_path: null,
+      confidence: null, reported_by: ['Mohammed', 'Ahmad', 'Layla'][Math.floor(rnd() * 3)], manual: true, photo_path: null,
       note: svc ? list[Math.floor(rnd() * list.length)] : null, confirmations: 1 + Math.floor(rnd() * rnd() * 5), status: stat[i % stat.length], status_note: null, status_at: null };
   });
 }
@@ -240,14 +252,14 @@ async function openDetail(id, silent) {
   d.innerHTML = `<button class="back" id="dBack">${lang === 'ar' ? '→' : '←'} ${t('back')}</button>
     <div class="photo" id="dPhoto">${t('loadingPhoto')}</div>
     <h2><span class="dot" style="background:${COLORS[r.type]}"></span><span id="dType"></span><span class="badge ${r.status}" id="dBadge"></span></h2>
-    <dl class="kv"><dt>${t('time')}</dt><dd class="rtl" id="dTime"></dd><dt>${t('location')}</dt><dd id="dLoc"></dd><dt>${t('accuracy')}</dt><dd class="rtl" id="dAcc"></dd><dt>${t('confidence')}</dt><dd class="rtl" id="dConf"></dd><dt>${t('source')}</dt><dd class="rtl" id="dSrc"></dd><dt>${t('confirmations')}</dt><dd class="rtl" id="dConfirm"></dd><dt>${t('age')}</dt><dd class="rtl" id="dAge"></dd>${r.note ? `<dt>${t('vnote')}</dt><dd class="rtl" id="dVNote"></dd>` : ''}</dl>
+    <dl class="kv"><dt>${t('time')}</dt><dd class="rtl" id="dTime"></dd><dt>${t('location')}</dt><dd id="dLoc"></dd><dt>${t('accuracy')}</dt><dd class="rtl" id="dAcc"></dd><dt>${t('reporter')}</dt><dd class="rtl" id="dBy"></dd><dt>${t('source')}</dt><dd class="rtl" id="dSrc"></dd><dt>${t('confirmations')}</dt><dd class="rtl" id="dConfirm"></dd><dt>${t('age')}</dt><dd class="rtl" id="dAge"></dd>${r.note ? `<dt>${t('vnote')}</dt><dd class="rtl" id="dVNote"></dd>` : ''}</dl>
     <div class="links"><a class="lnk" target="_blank" rel="noopener" id="dMap">${t('openMap')}</a><a class="lnk alt" target="_blank" rel="noopener" id="dDir">${t('directions')}</a><button class="lnk share" id="dShare">${t('share')}</button><a class="lnk wa" target="_blank" rel="noopener" id="dWa">${t('whatsapp')}</a></div>
     <div class="stbox"><div class="gt">${t('status')}</div><div class="stbtns" id="dBtns"></div><textarea id="dNote" placeholder="${t('note')}" maxlength="480"></textarea><button class="save" id="dSave">${t('save')}</button><div class="who" id="dWho"></div></div>`;
   $('dBack').onclick = closeDetail;
   $('dType').textContent = t(r.type); $('dBadge').textContent = t(r.status);
   $('dTime').textContent = fmtTime(r.detected_at); $('dLoc').textContent = `${r.lat.toFixed(6)}, ${r.lon.toFixed(6)}`;
   $('dAcc').textContent = r.accuracy_m == null ? '—' : `${Math.round(r.accuracy_m)} ${t('m')}`;
-  $('dConf').textContent = r.confidence == null ? '—' : `${Math.round(r.confidence * 100)}%`;
+  $('dBy').textContent = r.reported_by || '—';
   $('dSrc').textContent = r.manual ? t('manual') : t('auto');
   $('dConfirm').textContent = String(r.confirmations || 1);
   $('dAge').textContent = ageText(r);
@@ -332,9 +344,75 @@ function scheduleDelete(r, prev) {
 function exportCsv() {
   const rows = visibleRows(); const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const lines = [T[lang].csvHead.map(q).join(',')];
-  for (const r of rows) lines.push([r.id, r.detected_at, t(r.type), t(r.status), r.lat, r.lon, r.accuracy_m ?? '', r.confidence ?? '', r.manual ? 1 : 0, mapsLink(r), r.note ?? '', r.status_note ?? ''].map(q).join(','));
+  for (const r of rows) lines.push([r.id, r.detected_at, t(r.type), t(r.status), r.lat, r.lon, r.accuracy_m ?? '', r.manual ? 1 : 0, r.reported_by ?? '', mapsLink(r), r.note ?? '', r.status_note ?? ''].map(q).join(','));
   const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `reports-${new Date().toISOString().slice(0, 10)}.csv`; a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ------------------------------------------------------------------ app users (administrators only)
+const genCode = () => { const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; const r = new Uint32Array(8); crypto.getRandomValues(r); return [...r].map((x) => a[x % a.length]).join(''); };
+let demoUsers = [
+  { id: 'u1', username: 'Mohammed', status: 'active', created_at: new Date(Date.now() - 9 * 864e5).toISOString(), activated_at: new Date(Date.now() - 8 * 864e5).toISOString(), last_seen_at: new Date(Date.now() - 36e5).toISOString(), reports: 14 },
+  { id: 'u2', username: 'Ahmad', status: 'waiting', created_at: new Date(Date.now() - 864e5).toISOString(), activated_at: null, last_seen_at: null, reports: 0 },
+];
+async function usersList() { if (DEMO) return demoUsers; const { data, error } = await sb.rpc('admin_list_app_users'); if (error) throw error; return data || []; }
+async function usersCall(fn, args) {
+  if (DEMO) {
+    if (fn === 'admin_create_app_user') demoUsers.unshift({ id: 'u' + Date.now(), username: args.p_username, status: 'waiting', created_at: new Date().toISOString(), activated_at: null, last_seen_at: null, reports: 0 });
+    else { const u = demoUsers.find((x) => x.id === args.p_id); if (u) { if (fn === 'admin_delete_app_user') demoUsers = demoUsers.filter((x) => x !== u); else if (fn === 'admin_revoke_app_user') u.status = 'revoked'; else if (fn === 'admin_reset_app_user') { u.status = 'waiting'; u.activated_at = null; } } }
+    return;
+  }
+  const { error } = await sb.rpc(fn, args); if (error) throw error;
+}
+function userError(e) { const m = String((e && e.message) || e); return m.includes('username taken') ? t('uTaken') : m.includes('bad') ? t('uBad') : t('uErr'); }
+async function checkAdmin() {
+  if (DEMO) { $('btnUsers').classList.remove('hidden'); return; }
+  try { const { data } = await sb.rpc('is_admin'); $('btnUsers').classList.toggle('hidden', data !== true); } catch (_) { $('btnUsers').classList.add('hidden'); }
+}
+function closeUsers() { $('usersModal').classList.add('hidden'); }
+async function openUsers() { $('usersModal').classList.remove('hidden'); await renderUsers(null); }
+async function renderUsers(shown) {
+  const body = $('usersBody'); body.innerHTML = '';
+  const form = document.createElement('div'); form.className = 'uform';
+  form.innerHTML = `<h3></h3><div class="urow"><input id="uName" maxlength="30" autocomplete="off"><input id="uCodeIn" maxlength="64" autocomplete="off" dir="ltr"><button class="btn2" id="uGen" type="button"></button><button class="btn2 pri" id="uCreate" type="button"></button></div><p class="uhint"></p>`;
+  form.querySelector('h3').textContent = t('newUser');
+  form.querySelector('#uName').placeholder = t('uName'); form.querySelector('#uCodeIn').placeholder = t('uCode'); form.querySelector('#uGen').textContent = t('uGen'); form.querySelector('#uCreate').textContent = t('uCreate');
+  form.querySelector('.uhint').textContent = t('uHint');
+  body.appendChild(form);
+  const codeIn = form.querySelector('#uCodeIn'); codeIn.value = genCode();
+  form.querySelector('#uGen').onclick = () => { codeIn.value = genCode(); };
+  const showCode = (name, code) => { renderUsers({ name, code }); };
+  form.querySelector('#uCreate').onclick = async () => {
+    const name = form.querySelector('#uName').value.trim(), code = codeIn.value.trim();
+    try { await usersCall('admin_create_app_user', { p_username: name, p_code: code }); showCode(name, code); } catch (e) { toast(userError(e)); }
+  };
+  if (shown) {
+    const box = document.createElement('div'); box.className = 'ucode';
+    box.innerHTML = '<p></p><div class="big" dir="ltr"></div><button class="btn2" type="button"></button>';
+    box.querySelector('p').textContent = t('uCodeShown');
+    box.querySelector('.big').textContent = `${shown.name}   ·   ${shown.code}`;
+    const cb = box.querySelector('button'); cb.textContent = t('uCopy');
+    cb.onclick = async () => { try { await navigator.clipboard.writeText(`${shown.name}\n${shown.code}`); toast(t('uCopied')); } catch (_) { window.prompt(t('uCopy'), `${shown.name} ${shown.code}`); } };
+    body.appendChild(box);
+  }
+  let list = [];
+  try { list = await usersList(); } catch (e) { toast(userError(e)); }
+  const wrap = document.createElement('div'); wrap.className = 'ulist';
+  if (!list.length) wrap.innerHTML = `<div class="empty">${t('uNone')}</div>`;
+  for (const u of list) {
+    const row = document.createElement('div'); row.className = 'uitem';
+    const st = u.status === 'active' ? t('uActive') : u.status === 'revoked' ? t('uRevoked') : t('uWaiting');
+    row.innerHTML = `<div class="un"><b></b><span class="ubadge ${u.status}"></span></div><div class="um"></div><div class="ua"></div>`;
+    row.querySelector('b').textContent = u.username; row.querySelector('.ubadge').textContent = st;
+    row.querySelector('.um').textContent = `${u.reports} ${t('uReports')}${u.last_seen_at ? ' · ' + t('uLast') + ': ' + fmtTime(u.last_seen_at) : ''}`;
+    const act = row.querySelector('.ua');
+    const btn = (label, fn, cls) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn2 ' + (cls || ''); b.textContent = label; b.onclick = fn; act.appendChild(b); };
+    btn(t('uReset'), async () => { if (!window.confirm(t('uConfirmReset'))) return; const code = genCode(); try { await usersCall('admin_reset_app_user', { p_id: u.id, p_code: code }); showCode(u.username, code); } catch (e) { toast(userError(e)); } });
+    if (u.status !== 'revoked') btn(t('uRevoke'), async () => { if (!window.confirm(t('uConfirmRevoke'))) return; try { await usersCall('admin_revoke_app_user', { p_id: u.id }); renderUsers(null); } catch (e) { toast(userError(e)); } });
+    btn(t('uDelete'), async () => { if (!window.confirm(t('uConfirmDelete'))) return; try { await usersCall('admin_delete_app_user', { p_id: u.id }); renderUsers(null); } catch (e) { toast(userError(e)); } }, 'warn');
+    wrap.appendChild(row);
+  }
+  body.appendChild(wrap);
 }
 
 // ------------------------------------------------------------------ boot
@@ -344,7 +422,7 @@ async function startApp() {
   if (!map) initMap();
   setTimeout(() => map.invalidateSize(), 50);
   state.rows.clear(); state.fitted = false;
-  await load(); render(); subscribe();
+  await load(); render(); subscribe(); checkAdmin();
 }
 function showLogin() { $('app').classList.add('hidden'); $('login').classList.remove('hidden'); }
 
@@ -352,6 +430,7 @@ async function main() {
   applyLang();
   document.querySelectorAll('[data-lang]').forEach((b) => b.addEventListener('click', () => { lang = b.dataset.lang; try { localStorage.setItem('rs_lang', lang); } catch (_) {} applyLang(); if (map) { render(); if (state.selected) openDetail(state.selected, true); } }));
   $('btnExport').onclick = exportCsv;
+  $('btnUsers').onclick = openUsers; $('usersClose').onclick = closeUsers; $('usersModal').addEventListener('click', (e) => { if (e.target.id === 'usersModal') closeUsers(); });
   $('btnFilters').onclick = () => $('panel').classList.toggle('showfilters');
   if (DEMO) { $('btnOut').classList.add('hidden'); await startApp(); return; }
   sb = window.supabase.createClient(CFG.url, CFG.anonKey, { auth: { persistSession: true, autoRefreshToken: true } });
