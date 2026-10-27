@@ -416,7 +416,21 @@ async function renderUsers(shown) {
 }
 
 // ------------------------------------------------------------------ boot
+// the category row can be wider than the screen: the mouse wheel and click-and-drag scroll it sideways (touch screens swipe natively)
+function enableBarScroll(el) {
+  if (el._barScroll) return; el._barScroll = true;
+  el.addEventListener('wheel', (e) => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && el.scrollWidth > el.clientWidth) { el.scrollBy({ left: (getComputedStyle(el).direction === 'rtl' ? -1 : 1) * e.deltaY }); e.preventDefault(); }
+  }, { passive: false });
+  let down = null, moved = false;
+  el.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse') { down = { x: e.clientX, left: el.scrollLeft }; moved = false; } });
+  window.addEventListener('pointermove', (e) => { if (!down) return; const dx = e.clientX - down.x; if (Math.abs(dx) > 5) moved = true; if (moved) el.scrollLeft = down.left - dx; });
+  window.addEventListener('pointerup', () => { down = null; });
+  el.addEventListener('click', (e) => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+}
+
 async function startApp() {
+  enableBarScroll($('counts'));
   $('login').classList.add('hidden'); $('app').classList.remove('hidden');
   $('demoTag').classList.toggle('hidden', !DEMO);
   if (!map) initMap();
