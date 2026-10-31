@@ -134,7 +134,7 @@ async function loadPresence() {
 // ------------------------------------------------------------------ map
 async function setLayer(id) {
   const def = PRU_MAPS.find((m) => m.id === id) || PRU_MAPS[0];
-  if (def.google && !googleAvailable(CFG)) { toast(tt('googleNeedsKey')); return; }
+  if (!layerAvailable(def, CFG)) { toast(tt('needsKey')); return; }
   let layer;
   try { layer = await buildLayer(def, CFG); } catch (e) { console.error(e); toast(tt('loadErr')); return; }
   if (state.layer) map.removeLayer(state.layer);
@@ -147,9 +147,9 @@ function renderLayerPop() {
   const pop = $('layerPop'); pop.innerHTML = '';
   PRU_MAPS.forEach((m) => {
     const b = document.createElement('button'); b.type = 'button';
-    const off = m.google && !googleAvailable(CFG);
+    const off = !layerAvailable(m, CFG);
     b.className = (m.id === state.layerId ? 'on ' : '') + (off ? 'dis' : '');
-    b.innerHTML = `<span>${m.id === state.layerId ? '●' : '○'}</span><span>${esc(tt(m.key))}${off ? `<small>${esc(tt('googleNeedsKey'))}</small>` : ''}</span>`;
+    b.innerHTML = `<span>${m.id === state.layerId ? '●' : '○'}</span><span>${esc(tt(m.key))}${off ? `<small>${esc(tt('needsKey'))}</small>` : ''}</span>`;
     b.onclick = async () => { pop.classList.add('hidden'); await setLayer(m.id); };
     pop.appendChild(b);
   });
@@ -639,7 +639,7 @@ async function tgCall(fn, args) {
 }
 async function renderSettings() {
   $('aboutVer').textContent = tt('versionLine', { v: VERSION });
-  $('mapsList').innerHTML = PRU_MAPS.map((m) => `<span class="chip ${m.id === state.layerId ? 'on' : ''}">${esc(tt(m.key))}${m.google && !googleAvailable(CFG) ? ' · ' + esc(tt('googleNeedsKey')) : ''}</span>`).join('');
+  $('mapsList').innerHTML = PRU_MAPS.map((m) => `<span class="chip ${m.id === state.layerId ? 'on' : ''}">${esc(tt(m.key))}${!layerAvailable(m, CFG) ? ' · ' + esc(tt('needsKey')) : ''}</span>`).join('');
   $('tgWhat').innerHTML = ['tgW1', 'tgW2', 'tgW3'].map((k) => `<li>${esc(tt(k))}</li>`).join('');
   let list = null;
   try { list = await tgCall('admin_tg_list'); state.tg = list; } catch (e) { console.error(e); state.tg = null; }
