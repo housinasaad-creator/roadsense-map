@@ -3,7 +3,8 @@
 // Works on a phone browser too. Features that need the new database functions fail softly if the update was not applied yet.
 
 const CFG = window.ROADSENSE || {};
-const DEMO = !CFG.url || !CFG.anonKey || /[?&]demo\b/.test(location.search);
+const LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+const DEMO = !CFG.url || !CFG.anonKey || (LOCAL && /[?&]demo\b/.test(location.search)); // sample data only on the developer's own computer, never on the published site
 const VERSION = '2.0';
 const BOT = CFG.tgBot || 'PRU_SamaTadmor_bot';
 
@@ -133,7 +134,7 @@ async function loadPresence() {
 
 // ------------------------------------------------------------------ map
 async function setLayer(id) {
-  const def = PRU_MAPS.find((m) => m.id === id) || PRU_MAPS[0];
+  const def = visibleMaps(CFG).find((m) => m.id === id) || PRU_MAPS[0];
   if (!layerAvailable(def, CFG)) { toast(tt('needsKey')); return; }
   let layer;
   try { layer = await buildLayer(def, CFG); } catch (e) { console.error(e); toast(tt('loadErr')); return; }
@@ -145,11 +146,10 @@ async function setLayer(id) {
 }
 function renderLayerPop() {
   const pop = $('layerPop'); pop.innerHTML = '';
-  PRU_MAPS.forEach((m) => {
+  visibleMaps(CFG).forEach((m) => {
     const b = document.createElement('button'); b.type = 'button';
-    const off = !layerAvailable(m, CFG);
-    b.className = (m.id === state.layerId ? 'on ' : '') + (off ? 'dis' : '');
-    b.innerHTML = `<span>${m.id === state.layerId ? '●' : '○'}</span><span>${esc(tt(m.key))}${off ? `<small>${esc(tt('needsKey'))}</small>` : ''}</span>`;
+    b.className = m.id === state.layerId ? 'on' : '';
+    b.innerHTML = `<span>${m.id === state.layerId ? '●' : '○'}</span><span>${esc(tt(m.key))}</span>`;
     b.onclick = async () => { pop.classList.add('hidden'); await setLayer(m.id); };
     pop.appendChild(b);
   });
@@ -639,7 +639,7 @@ async function tgCall(fn, args) {
 }
 async function renderSettings() {
   $('aboutVer').textContent = tt('versionLine', { v: VERSION });
-  $('mapsList').innerHTML = PRU_MAPS.map((m) => `<span class="chip ${m.id === state.layerId ? 'on' : ''}">${esc(tt(m.key))}${!layerAvailable(m, CFG) ? ' · ' + esc(tt('needsKey')) : ''}</span>`).join('');
+  $('mapsList').innerHTML = visibleMaps(CFG).map((m) => `<span class="chip ${m.id === state.layerId ? 'on' : ''}">${esc(tt(m.key))}</span>`).join('');
   $('tgWhat').innerHTML = ['tgW1', 'tgW2', 'tgW3'].map((k) => `<li>${esc(tt(k))}</li>`).join('');
   let list = null;
   try { list = await tgCall('admin_tg_list'); state.tg = list; } catch (e) { console.error(e); state.tg = null; }
@@ -707,7 +707,7 @@ async function refreshAll() {
 }
 async function main() {
   applyLang(); renderLayerPop && 0;
-  document.querySelectorAll('[data-lang]').forEach((b) => b.addEventListener('click', () => { lang = b.dataset.lang; try { localStorage.setItem('pru_lang', lang); } catch (_) {} applyLang(); if (map) { renderLayerPop(); $('layerName').textContent = tt((PRU_MAPS.find((m) => m.id === state.layerId) || PRU_MAPS[0]).key); render(); buildBar(); route(); if (state.selected) openDetail(state.selected, true); } }));
+  document.querySelectorAll('[data-lang]').forEach((b) => b.addEventListener('click', () => { lang = b.dataset.lang; try { localStorage.setItem('pru_lang', lang); } catch (_) {} applyLang(); if (map) { renderLayerPop(); $('layerName').textContent = tt((visibleMaps(CFG).find((m) => m.id === state.layerId) || PRU_MAPS[0]).key); render(); buildBar(); route(); if (state.selected) openDetail(state.selected, true); } }));
   $('btnRefresh').onclick = refreshAll;
   $('btnRuler').onclick = () => { state.ruler.on ? rulerStop(false) : rulerStart(); };
   $('rulerCancel').onclick = () => rulerStop(false);

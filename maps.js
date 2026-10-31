@@ -4,8 +4,8 @@
 //   CARTO Voyager (free key, no account)           Google (official Map Tiles API key; billing must be enabled on the Google account)
 // `max` = the deepest zoom where the company really has tiles (Esri imagery stops at 18 around Palmyra; beyond it Esri sends a grey "Map data not yet available" tile).
 // Zooming past it makes the last real tiles bigger instead of asking for tiles that do not exist.
-// A layer that needs a key which is not in config.js is shown greyed out ("works once the key is added") and is never loaded:
-// loading it without a key would put a "KEY REQUIRED" watermark on the map. There is no unofficial Google tile address here.
+// A layer that needs a key which is not in config.js is not offered and never loaded (CARTO without a key draws an "API KEY REQUIRED" watermark).
+// There is no unofficial Google tile address here.
 const PRU_MAPS = [
   { id: 'streets', key: 'lStreets', url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', max: 19, attr: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' },
   { id: 'sat', key: 'lSat', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', max: 18, attr: 'Tiles &copy; Esri' },
@@ -14,8 +14,10 @@ const PRU_MAPS = [
   { id: 'google_sat', key: 'lGoogleSat', needsKey: 'googleKey', google: 'satellite' },
 ];
 
+// the maps that can be used now: a map whose key is not in config.js is not offered at all (it appears by itself once the key is added)
+function visibleMaps(cfg) { return PRU_MAPS.filter((m) => layerAvailable(m, cfg)); }
 function mapChoice() {
-  try { const id = localStorage.getItem('pru_map'); return PRU_MAPS.some((m) => m.id === id) ? id : 'streets'; } catch (_) { return 'streets'; } // an old saved choice that no longer exists falls back to streets
+  try { const id = localStorage.getItem('pru_map'); return visibleMaps(window.ROADSENSE).some((m) => m.id === id) ? id : 'streets'; } catch (_) { return 'streets'; } // an old saved choice that is gone falls back to streets
 }
 function saveMapChoice(id) { try { localStorage.setItem('pru_map', id); } catch (_) { /* private mode */ } }
 function layerAvailable(def, cfg) { return !def.needsKey || !!(cfg && cfg[def.needsKey]); }
