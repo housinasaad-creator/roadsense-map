@@ -213,6 +213,12 @@ function renderKpis() {
   const k = [[tt('kTotal'), by((r) => r.status !== 'rejected'), '#E5CB65'], [tt('new'), by((r) => r.status === 'new'), STATUS_COLOR.new], [tt('in_progress'), by((r) => r.status === 'in_progress'), STATUS_COLOR.in_progress], [tt('kFixed'), by((r) => r.status === 'fixed'), STATUS_COLOR.fixed]];
   $('kpis').innerHTML = k.map(([l, n, c]) => `<div class="kpi"><i style="background:${c}"></i>${esc(l)} <b style="color:${c}">${n}</b></div>`).join('');
 }
+// a report counts as sent to Telegram only if somebody had already joined the bot when it arrived (never claimed otherwise)
+function tgSent(r) {
+  const act = (state.tg || []).filter((a) => a.active !== false && a.joined_at);
+  if (!act.length) return false;
+  return new Date(r.created_at || r.detected_at).getTime() >= Math.min(...act.map((a) => new Date(a.joined_at).getTime()));
+}
 function feedItem(r, kind, at, fresh) {
   const c = COLORS[r.type] || '#888', urgent = r.type === 'explosive';
   const b = document.createElement('button'); b.type = 'button'; b.className = 'fi' + (fresh ? ' new' : '') + (urgent && kind === 'new' ? ' urgent' : '') + (state.selected === r.id ? ' sel' : '');
@@ -220,7 +226,7 @@ function feedItem(r, kind, at, fresh) {
   const sub = kind === 'status' ? (r.status_note || '') : `${r.reported_by || '—'}${r.accuracy_m != null ? ' · ±' + Math.round(r.accuracy_m) + ' ' + tt('m') : ''}${r.width_cm && r.length_cm ? ' · ' + sizeText(r) : ''}`;
   const sc = kind === 'status' ? STATUS_COLOR[r.status] : c;
   b.innerHTML = `<span class="ico" style="background:${sc}22;border-color:${sc};color:${sc}">${kind === 'status' && r.status === 'fixed' ? svg('other', 0).replace('<circle', '<circle') && '<svg viewBox="0 0 24 24" width="21" height="21"><path d="M4 12.5l5 5L20 6.5" stroke-width="3"/></svg>' : svg(r.type, 21)}</span>
-    <span class="sp"><div class="t">${esc(title)} ${urgent && kind === 'new' ? `<span class="badge" style="background:rgba(225,29,116,.25);color:#ffc2da">${esc(tt('urgent'))}</span>` : ''}</div><div class="m">${esc(sub)}</div>${kind === 'new' && !DEMO ? `<div class="tg">✓ ${esc(tt('toTg'))}</div>` : ''}</span><span class="ago">${esc(agoText(at))}</span>`;
+    <span class="sp"><div class="t">${esc(title)} ${urgent && kind === 'new' ? `<span class="badge" style="background:rgba(225,29,116,.25);color:#ffc2da">${esc(tt('urgent'))}</span>` : ''}</div><div class="m">${esc(sub)}</div>${kind === 'new' && tgSent(r) ? `<div class="tg">✓ ${esc(tt('toTg'))}</div>` : ''}</span><span class="ago">${esc(agoText(at))}</span>`;
   b.onclick = () => { openDetail(r.id); const m = markers.get(r.id); if (m && map) map.setView(m.getLatLng(), Math.max(map.getZoom(), 16)); };
   return b;
 }
@@ -643,6 +649,7 @@ async function renderSettings() {
   $('tgWhat').innerHTML = ['tgW1', 'tgW2', 'tgW3'].map((k) => `<li>${esc(tt(k))}</li>`).join('');
   let list = null;
   try { list = await tgCall('admin_tg_list'); state.tg = list; } catch (e) { console.error(e); state.tg = null; }
+  renderFeed();
   $('tgCard').innerHTML = `<div class="tgico"><svg viewBox="0 0 24 24"><path d="M21 4L3 11l6 2 2 6 3-4 5 4z"/></svg></div><div style="flex:1;min-width:200px"><div style="font-weight:900;font-size:20px">PRU · <a style="color:var(--sky)" dir="ltr" target="_blank" rel="noopener" href="https://t.me/${esc(BOT)}">@${esc(BOT)}</a></div><div class="note" style="margin:2px 0 0">${esc(list ? tt('tgDesc') : tt('tgNoRpc'))}</div></div>${list ? `<span class="chip tg">${esc(tt('tgConnected'))}</span>` : ''}`;
   const el = $('tgList');
   if (!list) el.innerHTML = `<div class="empty">${esc(tt('tgNoRpc'))}</div>`;
