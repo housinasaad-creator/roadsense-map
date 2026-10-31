@@ -1,451 +1,735 @@
 'use strict';
-// RoadSense live map for the officials: sign in, see every report on the map, open its photo, set its status.
+// PRU / Sama Tadmor control panel: sign in, see every report on the map, follow volunteers, manage users and Telegram.
+// Works on a phone browser too. Features that need the new database functions fail softly if the update was not applied yet.
 
 const CFG = window.ROADSENSE || {};
 const DEMO = !CFG.url || !CFG.anonKey || /[?&]demo\b/.test(location.search);
+const VERSION = '2.0';
+const BOT = CFG.tgBot || 'PRU_SamaTadmor_bot';
 
-// ------------------------------------------------------------------ texts
-const T = {
-  ar: {
-    appTitle: 'خريطة الطرق', loginSub: 'لوحة متابعة بلاغات الطرق والخدمات', email: 'البريد الإلكتروني', password: 'كلمة المرور', signIn: 'دخول', signOut: 'خروج', export: 'تصدير جدول',
-    demo: 'تجريبي', fType: 'النوع', fStatus: 'الحالة', fPeriod: 'الفترة', latest: 'أحدث البلاغات', errLogin: 'تعذّر الدخول: تحقق من البريد وكلمة المرور.',
-    pothole: 'حفرة', bump: 'مطب', crack: 'شق', crack_severe: 'شق خطير', electric: 'كهرباء', water: 'مياه', sewer: 'تمديدات صحية', telecom: 'اتصالات', other: 'أخرى', vnote: 'ملاحظة المتطوع', reporter: 'المبلّغ', usersTitle: 'مستخدمو التطبيق', newUser: 'مستخدم جديد', uName: 'اسم المستخدم', uCode: 'رمز التفعيل', uGen: 'توليد', uCreate: 'إنشاء',
-    uCodeShown: 'أعطِ المستخدم الاسم والرمز التالين. يظهر الرمز هنا مرة واحدة فقط، ويُحرق عند أول تفعيل على هاتف، فلا يعمل على هاتف آخر:', uCopy: 'نسخ', uCopied: 'تم النسخ',
-    uWaiting: 'بانتظار التفعيل', uActive: 'مفعّل على هاتف', uRevoked: 'موقوف', uReports: 'بلاغات', uLast: 'آخر نشاط', uReset: 'رمز جديد', uRevoke: 'إيقاف', uDelete: 'حذف',
-    uConfirmDelete: 'حذف هذا المستخدم؟ تبقى بلاغاته على الخريطة.', uConfirmReset: 'إصدار رمز جديد؟ سينفصل الهاتف الحالي ولن يستطيع الإرسال.', uConfirmRevoke: 'إيقاف هذا المستخدم؟ لن يستطيع هاتفه الإرسال.',
-    uTaken: 'هذا الاسم مستعمل', uBad: 'اسم أو رمز غير صالح (الاسم ٢–٣٠ حرفاً، الرمز ٦ أحرف على الأقل)', uErr: 'تعذّر تنفيذ العملية', uNone: 'لا يوجد مستخدمون بعد', uHint: 'رمز يعمل مرة واحدة على هاتف واحد، ويمكنك كتابته أو توليده.',
-    new: 'جديد', in_progress: 'قيد الإصلاح', fixed: 'تم الإصلاح', rejected: 'مرفوض',
-    today: 'اليوم', d7: '٧ أيام', d30: '٣٠ يوماً', all: 'الكل',
-    time: 'الوقت', location: 'الإحداثيات', accuracy: 'دقة الموقع', confidence: 'ثقة الكاشف', source: 'المصدر', auto: 'كشف تلقائي', manual: 'يدوي (زر التقاط)', m: 'م',
-    photo: 'الصورة', noPhoto: 'لا توجد صورة', loadingPhoto: 'جارٍ تحميل الصورة…', openMap: 'فتح في خرائط جوجل', directions: 'الاتجاهات', status: 'الحالة', note: 'ملاحظة للمتابعة (اختياري)', save: 'حفظ', saved: 'تم الحفظ', back: 'رجوع',
-    by: 'آخر تغيير', confirmations: 'عدد التأكيدات', ageLine: 'مضى عليه {n} يوماً دون إصلاح', ageToday: 'بلاغ اليوم', age: 'عمر البلاغ', share: 'مشاركة الإحداثيات', whatsapp: 'واتساب', copied: 'نُسخت الإحداثيات', fixedTotal: 'أُصلح حتى الآن', undo: 'تراجع', fixedDone: 'سيُحذف البلاغ وصورته بعد', secs: 'ث', deleted: 'حُذف البلاغ وصورته', archiveHint: 'المُصلَح مخفي — فعّل «تم الإصلاح» لرؤية الأرشيف', newReport: 'بلاغ جديد', empty: 'لا توجد بلاغات بهذه الفلاتر', total: 'الإجمالي', shown: 'المعروض', loadErr: 'تعذّر تحميل البلاغات', saveErr: 'تعذّر الحفظ',
-    csvHead: ['المعرّف', 'الوقت', 'النوع', 'الحالة', 'خط العرض', 'خط الطول', 'الدقة (م)', 'يدوي', 'المبلّغ', 'رابط الخريطة', 'ملاحظة المتطوع', 'ملاحظة'],
-  },
-  tr: {
-    appTitle: 'Yol Haritası', loginSub: 'Yol ve hizmet bildirimleri takip paneli', email: 'E-posta', password: 'Parola', signIn: 'Giriş', signOut: 'Çıkış', export: 'Tabloyu indir',
-    demo: 'DEMO', fType: 'Tür', fStatus: 'Durum', fPeriod: 'Dönem', latest: 'Son bildirimler', errLogin: 'Giriş yapılamadı: e-posta ve parolayı kontrol edin.',
-    pothole: 'Çukur', bump: 'Kasis', crack: 'Çatlak', crack_severe: 'Ciddi çatlak', electric: 'Elektrik', water: 'Su', sewer: 'Sıhhi tesisat', telecom: 'Telekom', other: 'Diğer', vnote: 'Gönüllü notu', reporter: 'Bildiren', usersTitle: 'Uygulama kullanıcıları', newUser: 'Yeni kullanıcı', uName: 'Kullanıcı adı', uCode: 'Etkinleştirme kodu', uGen: 'Üret', uCreate: 'Oluştur',
-    uCodeShown: 'Kullanıcıya şu adı ve kodu verin. Kod burada yalnızca bir kez görünür ve ilk etkinleştirmede yanar; başka telefonda çalışmaz:', uCopy: 'Kopyala', uCopied: 'Kopyalandı',
-    uWaiting: 'Etkinleştirme bekliyor', uActive: 'Bir telefonda etkin', uRevoked: 'Durduruldu', uReports: 'bildirim', uLast: 'Son etkinlik', uReset: 'Yeni kod', uRevoke: 'Durdur', uDelete: 'Sil',
-    uConfirmDelete: 'Bu kullanıcı silinsin mi? Bildirimleri haritada kalır.', uConfirmReset: 'Yeni kod verilsin mi? Mevcut telefon bağlantısı kesilir.', uConfirmRevoke: 'Bu kullanıcı durdurulsun mu? Telefonu gönderemez.',
-    uTaken: 'Bu ad kullanılıyor', uBad: 'Geçersiz ad veya kod (ad 2–30 karakter, kod en az 6 karakter)', uErr: 'İşlem yapılamadı', uNone: 'Henüz kullanıcı yok', uHint: 'Tek telefonda bir kez çalışan kod; yazabilir veya üretebilirsiniz.',
-    new: 'Yeni', in_progress: 'Onarımda', fixed: 'Onarıldı', rejected: 'Reddedildi',
-    today: 'Bugün', d7: '7 gün', d30: '30 gün', all: 'Tümü',
-    time: 'Zaman', location: 'Koordinat', accuracy: 'Konum doğruluğu', confidence: 'Dedektör güveni', source: 'Kaynak', auto: 'Otomatik tespit', manual: 'Elle (Yakala düğmesi)', m: 'm',
-    photo: 'Fotoğraf', noPhoto: 'Fotoğraf yok', loadingPhoto: 'Fotoğraf yükleniyor…', openMap: 'Google Haritalar\'da aç', directions: 'Yol tarifi', status: 'Durum', note: 'Takip notu (isteğe bağlı)', save: 'Kaydet', saved: 'Kaydedildi', back: 'Geri',
-    by: 'Son değişiklik', confirmations: 'Onay sayısı', ageLine: '{n} gündür onarılmadı', ageToday: 'Bugünün bildirimi', age: 'Bildirim yaşı', share: 'Koordinatları paylaş', whatsapp: 'WhatsApp', copied: 'Koordinatlar kopyalandı', fixedTotal: 'Şimdiye kadar onarılan', undo: 'Geri al', fixedDone: 'Bildirim ve fotoğrafı silinecek:', secs: 'sn', deleted: 'Bildirim ve fotoğrafı silindi', archiveHint: 'Onarılanlar gizli — arşiv için «Onarıldı»yı açın', newReport: 'Yeni bildirim', empty: 'Bu filtrelerle bildirim yok', total: 'Toplam', shown: 'Gösterilen', loadErr: 'Bildirimler yüklenemedi', saveErr: 'Kaydedilemedi',
-    csvHead: ['Kimlik', 'Zaman', 'Tür', 'Durum', 'Enlem', 'Boylam', 'Doğruluk (m)', 'Elle', 'Bildiren', 'Harita bağlantısı', 'Gönüllü notu', 'Not'],
-  },
-  en: {
-    appTitle: 'Road Map', loginSub: 'Roads and city services reports dashboard', email: 'Email', password: 'Password', signIn: 'Sign in', signOut: 'Sign out', export: 'Export table',
-    demo: 'DEMO', fType: 'Type', fStatus: 'Status', fPeriod: 'Period', latest: 'Latest reports', errLogin: 'Could not sign in: check the email and password.',
-    pothole: 'Pothole', bump: 'Speed bump', crack: 'Crack', crack_severe: 'Severe crack', electric: 'Electricity', water: 'Water', sewer: 'Plumbing / sewage', telecom: 'Telecom', other: 'Other', vnote: 'Volunteer note', reporter: 'Reported by', usersTitle: 'App users', newUser: 'New user', uName: 'Username', uCode: 'Activation code', uGen: 'Generate', uCreate: 'Create',
-    uCodeShown: 'Give the user this name and code. The code is shown here only once and is burnt at the first activation on a phone, so it cannot be used on another phone:', uCopy: 'Copy', uCopied: 'Copied',
-    uWaiting: 'Waiting for activation', uActive: 'Active on one phone', uRevoked: 'Revoked', uReports: 'reports', uLast: 'Last seen', uReset: 'New code', uRevoke: 'Revoke', uDelete: 'Delete',
-    uConfirmDelete: 'Delete this user? Their reports stay on the map.', uConfirmReset: 'Issue a new code? The current phone will be unbound and cannot send.', uConfirmRevoke: 'Revoke this user? Their phone will not be able to send.',
-    uTaken: 'This name is taken', uBad: 'Invalid name or code (name 2-30 characters, code at least 6)', uErr: 'The action failed', uNone: 'No users yet', uHint: 'A code that works once on one phone; type it or generate it.',
-    new: 'New', in_progress: 'In progress', fixed: 'Fixed', rejected: 'Rejected',
-    today: 'Today', d7: '7 days', d30: '30 days', all: 'All',
-    time: 'Time', location: 'Coordinates', accuracy: 'GPS accuracy', confidence: 'Detector confidence', source: 'Source', auto: 'Automatic detection', manual: 'By hand (Capture button)', m: 'm',
-    photo: 'Photo', noPhoto: 'No photo', loadingPhoto: 'Loading photo…', openMap: 'Open in Google Maps', directions: 'Directions', status: 'Status', note: 'Follow-up note (optional)', save: 'Save', saved: 'Saved', back: 'Back',
-    by: 'Last change', confirmations: 'Confirmations', ageLine: 'Unrepaired for {n} days', ageToday: 'Reported today', age: 'Report age', share: 'Share coordinates', whatsapp: 'WhatsApp', copied: 'Coordinates copied', fixedTotal: 'Fixed so far', undo: 'Undo', fixedDone: 'The report and its photo will be deleted in', secs: 's', deleted: 'Report and photo deleted', archiveHint: 'Fixed reports are hidden — switch on "Fixed" to see the archive', newReport: 'New report', empty: 'No reports with these filters', total: 'Total', shown: 'Shown', loadErr: 'Could not load the reports', saveErr: 'Could not save',
-    csvHead: ['ID', 'Time', 'Type', 'Status', 'Latitude', 'Longitude', 'Accuracy (m)', 'Manual', 'Reporter', 'Map link', 'Volunteer note', 'Note'],
-  },
+const TYPES = ['pothole', 'bump', 'crack_severe', 'crack', 'electric', 'water', 'sewer', 'telecom', 'explosive', 'remnant', 'garden', 'other'];
+const COLORS = { pothole: '#FF8A4C', bump: '#FACC15', crack_severe: '#DC2626', crack: '#FB7185', electric: '#A78BFA', water: '#38BDF8', sewer: '#B08968', telecom: '#F472B6', explosive: '#E11D74', remnant: '#6366F1', garden: '#2DD4BF', other: '#94A3B8' };
+const ICON = {
+  pothole: '<path d="M3 15c0-3 4-5 9-5s9 2 9 5-4 5-9 5-9-2-9-5z"/><path d="M7 14c3-1.5 7-1.5 10 0"/>', bump: '<path d="M3 18h18M5 18c1-6 5-9 7-9s6 3 7 9"/>',
+  crack: '<path d="M12 2l-2 7 4 3-3 4 2 6M10 9l-5 2M14 12l5-1"/>', crack_severe: '<path d="M12 2l-2 7 4 3-3 4 2 6M10 9l-5 2M14 12l5-1"/>',
+  electric: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>', water: '<path d="M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z"/>', sewer: '<path d="M3 9h6V6h6v3h6M3 17h18M7 9v8M17 9v8"/>',
+  telecom: '<path d="M12 20v-8M8 8a6 6 0 0 1 8 0M5 5a10 10 0 0 1 14 0"/>', explosive: '<path d="M12 3l10 18H2zM12 10v5M12 18v.5"/>', remnant: '<path d="M3 20l4-8 4 4 3-9 7 13z"/>',
+  garden: '<path d="M5 19c0-9 6-14 15-14 0 9-5 15-14 15zM5 19L14 10"/>', other: '<circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/>',
 };
-let lang = (() => { try { return localStorage.getItem('rs_lang') || 'ar'; } catch (_) { return 'ar'; } })();
-if (!T[lang]) lang = 'ar';
-const t = (k) => T[lang][k] ?? k;
-
-const COLORS = { pothole: '#FF4B3E', bump: '#FFC21A', crack: '#4DA3FF', crack_severe: '#B36BFF', electric: '#FF8A1F', water: '#19C3C3', sewer: '#A9714B', telecom: '#3CCB7F', other: '#9AA0A6' };
-const RING = { new: '#FFFFFF', in_progress: '#FF9F1C', fixed: '#25D366', rejected: '#8A8F98' };
-const TYPES = ['pothole', 'bump', 'crack_severe', 'crack', 'electric', 'water', 'sewer', 'telecom', 'other'];
 const STATUSES = ['new', 'in_progress', 'fixed', 'rejected'];
+const STATUS_COLOR = { new: '#5CB8F2', in_progress: '#E5CB65', fixed: '#22C55E', rejected: '#64748B' };
 const PERIODS = [['today', 1], ['d7', 7], ['d30', 30], ['all', 0]];
 
-// ------------------------------------------------------------------ state
 const $ = (id) => document.getElementById(id);
-const state = { fixedTotal: 0, rows: new Map(), type: 'all', statuses: new Set(['new', 'in_progress']), period: 30, selected: null, user: null, fitted: false };
-let sb = null, map = null, cluster = null;
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const state = {
+  rows: new Map(), types: new Set(TYPES), statuses: new Set(['new', 'in_progress', 'fixed']), period: 0, vol: '', selected: null, fitted: false,
+  feed: [], users: [], presence: [], admin: false, tg: null, ruler: { on: false, box: null }, layer: null, layerId: mapChoice(), side: 'feed',
+};
+let sb = null, map = null, cluster = null, volLayer = null, rulerRect = null;
 const markers = new Map();
 
 // ------------------------------------------------------------------ helpers
+const tt = (k, v) => t(k, v);
 function applyLang() {
   document.documentElement.lang = lang;
   document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-  document.querySelectorAll('[data-i]').forEach((e) => { e.textContent = t(e.dataset.i); });
-  document.querySelectorAll('[data-i-title]').forEach((e) => { e.title = t(e.dataset.iTitle); });
-  document.title = t('appTitle');
+  document.querySelectorAll('[data-i]').forEach((e) => { e.textContent = tt(e.dataset.i); });
+  document.querySelectorAll('[data-i-title]').forEach((e) => { e.title = tt(e.dataset.iTitle); });
+  document.title = tt('appTitle');
   document.querySelectorAll('[data-lang]').forEach((b) => b.classList.toggle('on', b.dataset.lang === lang));
 }
-function fmtTime(iso) {
-  try { return new Intl.DateTimeFormat(lang === 'ar' ? 'ar-SY-u-nu-latn' : lang, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso)); } catch (_) { return iso; }
+function fmtTime(iso) { try { return new Intl.DateTimeFormat(lang === 'ar' ? 'ar-SY-u-nu-latn' : lang, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso)); } catch (_) { return iso; } }
+function agoText(iso) {
+  if (!iso) return tt('neverSeen');
+  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 90) return tt('liveNow');
+  const n = s < 3600 ? Math.round(s / 60) + ' ' + tt('min') : s < 86400 ? Math.round(s / 3600) + ' ' + tt('hour') : Math.round(s / 86400) + ' ' + tt('day');
+  return tt('seenAgo', { n });
 }
-function toast(msg) {
-  const e = $('toast'); e.textContent = msg; e.classList.remove('hidden');
-  clearTimeout(toast._t); toast._t = setTimeout(() => e.classList.add('hidden'), 3500);
-}
+function toast(msg) { const e = $('toast'); e.textContent = msg; e.classList.remove('hidden'); clearTimeout(toast._t); toast._t = setTimeout(() => e.classList.add('hidden'), 3200); }
 const ageDays = (r) => Math.max(0, Math.floor((Date.now() - new Date(r.detected_at).getTime()) / 86400000));
-const ageText = (r) => { const n = ageDays(r); return n < 1 ? t('ageToday') : t('ageLine').replace('{n}', n); };
+const ageText = (r) => { const n = ageDays(r); return n < 1 ? tt('ageToday') : tt('ageLine', { n }); };
 const mapsLink = (r) => `https://www.google.com/maps?q=${r.lat},${r.lon}`;
 const dirLink = (r) => `https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lon}`;
 const since = () => (state.period ? Date.now() - state.period * 86400000 : 0);
+const sizeText = (r) => (r.width_cm && r.length_cm ? `${(r.width_cm / 100).toFixed(2)} × ${(r.length_cm / 100).toFixed(2)} ${tt('m')}` : '—');
 function visibleRows() {
   const s = since();
-  return [...state.rows.values()].filter((r) => (state.type === 'all' || r.type === state.type) && state.statuses.has(r.status) && (!s || new Date(r.detected_at).getTime() >= s))
+  return [...state.rows.values()].filter((r) => state.types.has(r.type) && state.statuses.has(r.status) && (!state.vol || r.reported_by === state.vol) && (!s || new Date(r.detected_at).getTime() >= s))
     .sort((a, b) => new Date(b.detected_at) - new Date(a.detected_at));
 }
+const svg = (name, size = 20) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}">${ICON[name] || ICON.other}</svg>`;
 
-// ------------------------------------------------------------------ data
-function seeded(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+// ------------------------------------------------------------------ demo data
+function seeded(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let x = Math.imul(a ^ a >>> 15, 1 | a); x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x; return ((x ^ x >>> 14) >>> 0) / 4294967296; }; }
 function demoRows() {
-  const rnd = seeded(20261025), pts = window.TADMUR_POINTS || [], now = Date.now();
-  const plan = { pothole: 9, bump: 6, crack_severe: 4, crack: 3, electric: 7, water: 5, sewer: 5, telecom: 4, other: 2 };
-  const notes = {
-    electric: ['سلك كهرباء واقع على الأرض قرب المدرسة', 'باب المحوّلة مخلوع ومفتوح', 'عمود كهرباء مائل ويحتاج تثبيت', 'أسلاك مكشوفة على الجدار'],
-    water: ['صنبور مكسور والماء يسيل منذ الصباح', 'تسرّب مياه من الأنبوب على الرصيف', 'فتحة مياه بدون غطاء'],
-    sewer: ['غطاء المنهل مفقود، خطر على السيارات', 'انسداد في الصرف والمياه تطفح', 'تمديد صرف مكسور'],
-    telecom: ['خط هاتف مكشوف على الأرض', 'خزانة الاتصالات مفتوحة', 'كابل متدلٍّ فوق الطريق'],
-    other: ['إنارة الشارع معطّلة', 'ركام يسدّ نصف الشارع'],
-  };
+  const rnd = seeded(20261031), pts = window.TADMUR_POINTS || [], now = Date.now();
+  const plan = { pothole: 8, bump: 5, crack_severe: 3, crack: 3, electric: 6, water: 4, sewer: 4, telecom: 3, explosive: 2, remnant: 3, garden: 2, other: 2 };
+  const notes = { electric: ['سلك كهرباء واقع على الأرض', 'باب المحوّلة مخلوع'], water: ['تسرّب مياه من الأنبوب'], sewer: ['غطاء المنهل مفقود'], explosive: ['جسم مشبوه قرب الجدار'], remnant: ['ركام وذخيرة قديمة'], garden: ['حديقة عامة متضررة'] };
   const types = []; for (const [k, n] of Object.entries(plan)) for (let i = 0; i < n; i++) types.push(k);
   for (let i = types.length - 1; i > 0; i--) { const k = Math.floor(rnd() * (i + 1)); [types[i], types[k]] = [types[k], types[i]]; }
-  const stat = ['new', 'new', 'new', 'new', 'in_progress', 'new', 'in_progress', 'fixed', 'new', 'new', 'rejected'];
+  const stat = ['new', 'new', 'in_progress', 'fixed', 'new', 'fixed', 'in_progress', 'fixed', 'rejected', 'new', 'fixed'];
+  const who = ['Ahmad', 'Rana', 'Omar'];
   return types.map((type, i) => {
     const p = pts[i % Math.max(1, pts.length)] || [34.5603 + (rnd() - .5) * .02, 38.2701 + (rnd() - .5) * .03];
-    const list = notes[type], svc = !!list, age = rnd() * 20 * 86400000;
+    const age = rnd() * 20 * 86400000, l = notes[type];
     return { id: 'demo-' + i, created_at: new Date(now - age).toISOString(), detected_at: new Date(now - age).toISOString(), type, lat: p[0], lon: p[1], accuracy_m: Math.round(4 + rnd() * 10),
-      confidence: null, reported_by: ['Mohammed', 'Ahmad', 'Layla'][Math.floor(rnd() * 3)], manual: true, photo_path: null,
-      note: svc ? list[Math.floor(rnd() * list.length)] : null, confirmations: 1 + Math.floor(rnd() * rnd() * 5), status: stat[i % stat.length], status_note: null, status_at: null };
+      reported_by: who[Math.floor(rnd() * 3)], manual: true, photo_path: null, note: l ? l[Math.floor(rnd() * l.length)] : null, confirmations: 1 + Math.floor(rnd() * rnd() * 5),
+      status: stat[i % stat.length], status_note: null, status_at: null, width_cm: (type === 'pothole' || type === 'bump') ? 40 + Math.floor(rnd() * 60) : null, length_cm: (type === 'pothole' || type === 'bump') ? 30 + Math.floor(rnd() * 50) : null, ai_verdict: null,
+      last_seen_at: new Date(now - age * (0.3 + rnd() * 0.5)).toISOString(), app_version: '2.0.0', clean_photo_path: i % 2 === 0 ? 'demo' : null };
   });
 }
+function demoUsers() {
+  const n = Date.now();
+  return [
+    { id: 'u1', username: 'Ahmad', status: 'active', created_at: new Date(n - 9 * 864e5).toISOString(), activated_at: new Date(n - 8 * 864e5).toISOString(), last_seen_at: new Date(n - 20e3).toISOString(), reports: 14, app_version: '2.0.0', abi: 'arm64', sharing: true, shared_at: new Date(n - 20e3).toISOString() },
+    { id: 'u2', username: 'Rana', status: 'active', created_at: new Date(n - 7 * 864e5).toISOString(), activated_at: new Date(n - 6 * 864e5).toISOString(), last_seen_at: new Date(n - 40e3).toISOString(), reports: 9, app_version: '2.0.0', abi: 'arm64', sharing: true, shared_at: new Date(n - 40e3).toISOString() },
+    { id: 'u3', username: 'Omar', status: 'active', created_at: new Date(n - 5 * 864e5).toISOString(), activated_at: new Date(n - 4 * 864e5).toISOString(), last_seen_at: new Date(n - 12 * 60e3).toISOString(), reports: 6, app_version: '2.0.0', abi: 'arm32', sharing: true, shared_at: new Date(n - 12 * 60e3).toISOString() },
+    { id: 'u4', username: 'Noor', status: 'waiting', created_at: new Date(n - 864e5).toISOString(), activated_at: null, last_seen_at: null, reports: 0, app_version: null, abi: null, sharing: false, shared_at: null },
+    { id: 'u5', username: 'Hala', status: 'revoked', created_at: new Date(n - 20 * 864e5).toISOString(), activated_at: new Date(n - 19 * 864e5).toISOString(), last_seen_at: new Date(n - 3 * 864e5).toISOString(), reports: 3, app_version: '1.8.2', abi: 'arm64', sharing: false, shared_at: null },
+  ];
+}
+function demoPresence() {
+  const c = CFG.center || [34.5603, 38.2701], n = Date.now();
+  return [
+    { username: 'Ahmad', lat: c[0] + 0.004, lon: c[1] - 0.006, accuracy_m: 6, sharing: true, app_open: true, updated_at: new Date(n - 20e3).toISOString() },
+    { username: 'Rana', lat: c[0] - 0.003, lon: c[1] + 0.004, accuracy_m: 9, sharing: true, app_open: true, updated_at: new Date(n - 40e3).toISOString() },
+    { username: 'Omar', lat: c[0] + 0.007, lon: c[1] + 0.009, accuracy_m: 14, sharing: true, app_open: false, updated_at: new Date(n - 12 * 60e3).toISOString() },
+  ];
+}
+let demoTg = [{ chat_id: 1, name: 'Samer', username: 'samer_adm', active: true, joined_at: new Date(Date.now() - 3 * 864e5).toISOString() }, { chat_id: 2, name: 'Laila', username: 'laila_pru', active: true, joined_at: new Date(Date.now() - 2 * 864e5).toISOString() }];
+
+// ------------------------------------------------------------------ data
 async function load() {
-  if (DEMO) { demoRows().filter((r) => r.status !== 'fixed').forEach((r) => state.rows.set(r.id, r)); state.fixedTotal = 17; return; }
+  if (DEMO) { demoRows().forEach((r) => state.rows.set(r.id, r)); state.feed = [...state.rows.values()].sort((a, b) => new Date(b.detected_at) - new Date(a.detected_at)).slice(0, 12).map((r) => ({ kind: 'new', id: r.id, at: r.detected_at, fresh: false })); return; }
   const { data, error } = await sb.from('reports').select('*').order('detected_at', { ascending: false }).limit(5000);
-  if (error) { toast(t('loadErr')); console.error(error); return; }
+  if (error) { toast(tt('loadErr')); console.error(error); return; }
   data.forEach((r) => state.rows.set(r.id, r));
-  const { count } = await sb.from('fixed_log').select('id', { count: 'exact', head: true });
-  state.fixedTotal = count || 0;
-  // clean-up of reports marked fixed earlier whose deletion did not finish (the page was closed during the undo time)
-  const old = data.filter((r) => r.status === 'fixed' && r.status_at && Date.now() - new Date(r.status_at).getTime() > 3600000);
-  for (const r of old) await purge(r.id, r.photo_path, true);
+  state.feed = data.slice(0, 15).map((r) => ({ kind: 'new', id: r.id, at: r.created_at || r.detected_at, fresh: false }));
 }
 function subscribe() {
   if (DEMO) return;
   sb.channel('reports-live').on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, (p) => {
-    const r = p.new && p.new.id ? p.new : null;
-    if (!r) return;
-    const isNew = p.eventType === 'INSERT';
+    if (p.eventType === 'DELETE') { const id = p.old && p.old.id; if (id && state.rows.delete(id)) { if (state.selected === id) closeDetail(); render(); } return; }
+    const r = p.new && p.new.id ? p.new : null; if (!r) return;
+    const prev = state.rows.get(r.id), isNew = p.eventType === 'INSERT';
     state.rows.set(r.id, r);
-    render(); if (isNew) { toast(`${t('newReport')}: ${t(r.type)}`); pulse(r.id); }
-    if (state.selected === r.id) openDetail(r.id, true);
+    if (isNew) { state.feed.unshift({ kind: 'new', id: r.id, at: r.created_at, fresh: true }); toast(`${tt('newReport')}: ${tt(r.type)}`); pulse(r.id); }
+    else if (prev && prev.status !== r.status) state.feed.unshift({ kind: 'status', id: r.id, at: new Date().toISOString(), fresh: true });
+    state.feed = state.feed.slice(0, 40);
+    render(); if (state.selected === r.id) openDetail(r.id, true);
   }).subscribe();
+}
+async function loadUsers() {
+  if (DEMO) { state.users = state.users.length ? state.users : demoUsers(); return; }
+  try { const { data, error } = await sb.rpc('admin_list_app_users'); if (error) throw error; state.users = data || []; } catch (e) { console.error(e); }
+}
+async function loadPresence() {
+  if (DEMO) { state.presence = demoPresence(); drawVolunteers(); return; }
+  try { const { data, error } = await sb.rpc('admin_list_presence'); if (error) throw error; state.presence = data || []; } catch (_) { state.presence = []; }
+  drawVolunteers();
 }
 
 // ------------------------------------------------------------------ map
+async function setLayer(id) {
+  const def = PRU_MAPS.find((m) => m.id === id) || PRU_MAPS[0];
+  if (def.google && !googleAvailable(CFG)) { toast(tt('googleNeedsKey')); return; }
+  let layer;
+  try { layer = await buildLayer(def, CFG); } catch (e) { console.error(e); toast(tt('loadErr')); return; }
+  if (state.layer) map.removeLayer(state.layer);
+  state.layer = layer.addTo(map); layer.setZIndex(1);
+  state.layerId = def.id; saveMapChoice(def.id);
+  $('layerName').textContent = tt(def.key);
+  renderLayerPop();
+}
+function renderLayerPop() {
+  const pop = $('layerPop'); pop.innerHTML = '';
+  PRU_MAPS.forEach((m) => {
+    const b = document.createElement('button'); b.type = 'button';
+    const off = m.google && !googleAvailable(CFG);
+    b.className = (m.id === state.layerId ? 'on ' : '') + (off ? 'dis' : '');
+    b.innerHTML = `<span>${m.id === state.layerId ? '●' : '○'}</span><span>${esc(tt(m.key))}${off ? `<small>${esc(tt('googleNeedsKey'))}</small>` : ''}</span>`;
+    b.onclick = async () => { pop.classList.add('hidden'); await setLayer(m.id); };
+    pop.appendChild(b);
+  });
+}
 function initMap() {
-  map = L.map('map', { zoomControl: true, attributionControl: true }).setView(CFG.center || [34.56, 38.27], CFG.zoom || 12);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+  map = L.map('map', { zoomControl: false, attributionControl: true, maxZoom: 21 }).setView(CFG.center || [34.56, 38.27], CFG.zoom || 12);
+  L.control.zoom({ position: lang === 'ar' ? 'bottomleft' : 'bottomright' }).addTo(map);
   cluster = L.markerClusterGroup({ maxClusterRadius: 42, showCoverageOnHover: false });
   map.addLayer(cluster);
-  map.on('click', () => closeDetail());
+  volLayer = L.layerGroup().addTo(map);
+  map.on('click', () => { if (!state.ruler.on) closeDetail(); $('layerPop').classList.add('hidden'); });
+  setLayer(state.layerId);
 }
 function pulse(id) {
   const m = markers.get(id); if (!m) return;
   map.setView(m.getLatLng(), Math.max(map.getZoom(), 15));
-  setTimeout(() => { const el = m.getElement && m.getElement(); if (el) { el.classList.add('pulse'); setTimeout(() => el.classList.remove('pulse'), 5200); } }, 400);
+  setTimeout(() => { const e = m.getElement && m.getElement(); const d = e && e.querySelector('.pt'); if (d) { d.classList.add('pulse'); setTimeout(() => d.classList.remove('pulse'), 5200); } }, 400);
 }
-function styleFor(r) {
-  return { radius: Math.min(15, 9 + Math.floor(Math.log2(r.confirmations || 1) * 2)), color: RING[r.status] || '#fff', weight: 3, fillColor: COLORS[r.type] || '#888', fillOpacity: r.status === 'fixed' ? .45 : .95, opacity: 1 };
+function pointIcon(r) {
+  const n = r.confirmations || 1, sz = n >= 4 ? 's3' : n >= 2 ? 's2' : '', wh = sz === 's3' ? 34 : sz === 's2' ? 30 : 26;
+  return L.divIcon({ className: '', iconSize: [wh, wh], iconAnchor: [wh / 2, wh / 2], html: `<div class="pt ${sz} st-${r.status}${state.selected === r.id ? ' sel' : ''}" style="--c:${COLORS[r.type] || '#888'}">${n > 1 && r.status !== 'fixed' ? `<b>×${n}</b>` : ''}</div>` });
 }
-
 function fitVisible() { const rows = visibleRows(); if (rows.length) map.fitBounds(L.latLngBounds(rows.map((r) => [r.lat, r.lon])).pad(.2), { maxZoom: 16 }); }
+function drawVolunteers() {
+  if (!volLayer) return;
+  volLayer.clearLayers();
+  if (!$('liveToggle').checked) return;
+  const byName = new Map(state.users.map((u) => [String(u.username).toLowerCase(), u]));
+  state.presence.filter((p) => p.sharing && p.lat != null && p.lon != null).forEach((p) => {
+    const live = (Date.now() - new Date(p.updated_at).getTime()) < 3 * 60e3, name = p.username, u = byName.get(String(name).toLowerCase());
+    const html = `<div class="vol${live ? '' : ' stale'}"><div class="ring"></div><div class="dot">${esc(name[0] || '?')}</div><div class="lbl">${esc(name)} · ${esc(agoText(p.updated_at))}</div></div>`;
+    const m = L.marker([p.lat, p.lon], { icon: L.divIcon({ className: '', html, iconSize: [0, 0] }), zIndexOffset: 800 });
+    m.bindTooltip(`${esc(name)}${p.accuracy_m ? ' · ±' + Math.round(p.accuracy_m) + ' ' + tt('m') : ''}${u && u.app_version ? ' · v' + esc(u.app_version) : ''}`, { className: 'pruTip', direction: 'top', offset: [0, -22] });
+    m.on('click', (e) => { L.DomEvent.stopPropagation(e); volPopup(m, name, p); });
+    volLayer.addLayer(m);
+  });
+}
+function volPopup(m, name, p) {
+  const d = document.createElement('div'); d.className = 'volpop';
+  d.innerHTML = `<b>${esc(name)}</b><small>${esc(agoText(p.updated_at))}</small>`;
+  const mk = (label, cls, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.textContent = label; b.onclick = () => { map.closePopup(); fn(); }; d.appendChild(b); };
+  mk(tt('noteBtn'), 'g', () => openNote(name));
+  mk(tt('noteFilter'), '', () => { state.vol = name; renderFilters(); render(); });
+  L.popup({ offset: [0, -22], closeButton: false }).setLatLng(m.getLatLng()).setContent(d).openOn(map);
+}
 
 // ------------------------------------------------------------------ render
 function render() {
   const rows = visibleRows();
   cluster.clearLayers(); markers.clear();
   for (const r of rows) {
-    const m = L.circleMarker([r.lat, r.lon], styleFor(r));
-    m.on('click', (e) => { L.DomEvent.stopPropagation(e); openDetail(r.id); });
+    const m = L.marker([r.lat, r.lon], { icon: pointIcon(r), riseOnHover: true });
+    m.on('click', (e) => { L.DomEvent.stopPropagation(e); if (!state.ruler.on) openDetail(r.id); });
     markers.set(r.id, m); cluster.addLayer(m);
   }
-  if (!state.fitted && rows.length) { state.fitted = true; map.fitBounds(L.latLngBounds(rows.map((r) => [r.lat, r.lon])).pad(.2), { maxZoom: 16 }); }
-  renderCounts(); renderList(rows); renderChips();
+  if (!state.fitted && rows.length) { state.fitted = true; fitVisible(); }
+  renderKpis(); renderList(rows); renderFeed(); renderFilters();
 }
-function renderCounts() {
-  const all = [...state.rows.values()]; const by = (f) => all.filter(f).length; const live = (r) => r.status !== 'rejected';
-  const bar = $('counts'); bar.innerHTML = '';
-  // the categories: tap one to see only it, tap "All" to see everything (same filter as the chips in the side panel)
-  const tap = (key, label, n, color) => {
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'cnt tp' + (state.type === key ? ' on' : '');
-    b.innerHTML = `<i style="background:${color}"></i><span></span> <b>${n}</b>`; b.querySelector('span').textContent = label;
-    b.onclick = () => { state.type = key; render(); fitVisible(); };
-    bar.appendChild(b);
-  };
-  const info = (label, n, color) => {
-    const d = document.createElement('div'); d.className = 'cnt';
-    d.innerHTML = `<i style="background:${color}"></i><span></span> <b>${n}</b>`; d.querySelector('span').textContent = label; bar.appendChild(d);
-  };
-  tap('all', t('all'), by(live), '#B9B2A6');
-  TYPES.forEach((k) => tap(k, t(k), by((r) => r.type === k && live(r)), COLORS[k]));
-  info(t('new'), by((r) => r.status === 'new'), '#FF6A3D');
-  info(t('in_progress'), by((r) => r.status === 'in_progress'), '#FF9F1C');
-  info(t('fixedTotal'), state.fixedTotal + by((r) => r.status === 'fixed'), '#25D366');
+function renderKpis() {
+  const all = [...state.rows.values()]; const by = (f) => all.filter(f).length;
+  const k = [[tt('kTotal'), by((r) => r.status !== 'rejected'), '#E5CB65'], [tt('new'), by((r) => r.status === 'new'), STATUS_COLOR.new], [tt('in_progress'), by((r) => r.status === 'in_progress'), STATUS_COLOR.in_progress], [tt('kFixed'), by((r) => r.status === 'fixed'), STATUS_COLOR.fixed]];
+  $('kpis').innerHTML = k.map(([l, n, c]) => `<div class="kpi"><i style="background:${c}"></i>${esc(l)} <b style="color:${c}">${n}</b></div>`).join('');
+}
+function feedItem(r, kind, at, fresh) {
+  const c = COLORS[r.type] || '#888', urgent = r.type === 'explosive';
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'fi' + (fresh ? ' new' : '') + (urgent && kind === 'new' ? ' urgent' : '') + (state.selected === r.id ? ' sel' : '');
+  const title = kind === 'status' ? `${tt(r.status)} · ${tt(r.type)}` : `${tt('newReport')} · ${tt(r.type)}`;
+  const sub = kind === 'status' ? (r.status_note || '') : `${r.reported_by || '—'}${r.accuracy_m != null ? ' · ±' + Math.round(r.accuracy_m) + ' ' + tt('m') : ''}${r.width_cm && r.length_cm ? ' · ' + sizeText(r) : ''}`;
+  const sc = kind === 'status' ? STATUS_COLOR[r.status] : c;
+  b.innerHTML = `<span class="ico" style="background:${sc}22;border-color:${sc};color:${sc}">${kind === 'status' && r.status === 'fixed' ? svg('other', 0).replace('<circle', '<circle') && '<svg viewBox="0 0 24 24" width="21" height="21"><path d="M4 12.5l5 5L20 6.5" stroke-width="3"/></svg>' : svg(r.type, 21)}</span>
+    <span class="sp"><div class="t">${esc(title)} ${urgent && kind === 'new' ? `<span class="badge" style="background:rgba(225,29,116,.25);color:#ffc2da">${esc(tt('urgent'))}</span>` : ''}</div><div class="m">${esc(sub)}</div>${kind === 'new' && !DEMO ? `<div class="tg">✓ ${esc(tt('toTg'))}</div>` : ''}</span><span class="ago">${esc(agoText(at))}</span>`;
+  b.onclick = () => { openDetail(r.id); const m = markers.get(r.id); if (m && map) map.setView(m.getLatLng(), Math.max(map.getZoom(), 16)); };
+  return b;
+}
+function renderFeed() {
+  const el = $('feed'); el.innerHTML = '';
+  const items = state.feed.map((f) => ({ f, r: state.rows.get(f.id) })).filter((x) => x.r);
+  if (!items.length) { el.innerHTML = `<div class="empty">${esc(tt('noFeed'))}</div>`; return; }
+  items.forEach(({ f, r }) => el.appendChild(feedItem(r, f.kind, f.at, f.fresh)));
 }
 function renderList(rows) {
-  $('listCount').textContent = `${rows.length} / ${state.rows.size}`;
-  const el = $('list');
-  if (!rows.length) { el.innerHTML = `<div class="empty">${t('empty')}${state.statuses.has('fixed') ? '' : `<br><small>${t('archiveHint')}</small>`}</div>`; return; }
-  el.innerHTML = '';
-  for (const r of rows.slice(0, 200)) {
-    const b = document.createElement('button'); b.className = 'item' + (state.selected === r.id ? ' sel' : '');
-    b.innerHTML = `<span class="dot" style="background:${COLORS[r.type]};box-shadow:0 0 0 2.5px ${RING[r.status] === '#FFFFFF' ? 'rgba(0,0,0,.25)' : RING[r.status]}"></span><span class="sp"><div class="t"></div><div class="m"></div></span><span class="badge ${r.status}"></span>`;
-    b.querySelector('.t').textContent = t(r.type) + (r.manual ? ' ✋' : '') + ((r.confirmations || 1) > 1 ? ` ×${r.confirmations}` : '');
-    b.querySelector('.m').textContent = fmtTime(r.detected_at) + (r.note ? ' · ' + (r.note.length > 38 ? r.note.slice(0, 38) + '…' : r.note) : '');
-    b.querySelector('.badge').textContent = t(r.status);
+  $('listCount').textContent = `${rows.length} / ${state.rows.size}`; $('listCount').dir = 'ltr';
+  const el = $('list'); el.innerHTML = '';
+  if (!rows.length) { el.innerHTML = `<div class="empty">${esc(tt('empty'))}</div>`; return; }
+  for (const r of rows.slice(0, 300)) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'fi' + (state.selected === r.id ? ' sel' : '');
+    const c = COLORS[r.type] || '#888';
+    b.innerHTML = `<span class="ico" style="background:${c}22;border-color:${c};color:${c}">${svg(r.type, 21)}</span><span class="sp"><div class="t">${esc(tt(r.type))}${(r.confirmations || 1) > 1 ? ' ×' + r.confirmations : ''}</div><div class="m">${esc(fmtTime(r.detected_at))}${r.reported_by ? ' · ' + esc(r.reported_by) : ''}</div></span><span class="badge ${r.status}">${esc(tt(r.status))}</span>`;
     b.onclick = () => { openDetail(r.id); const m = markers.get(r.id); if (m) map.setView(m.getLatLng(), Math.max(map.getZoom(), 16)); };
     el.appendChild(b);
   }
 }
-function chip(group, key, label, on, color) {
-  const b = document.createElement('button'); b.className = 'chip' + (on ? ' on' : '');
-  b.innerHTML = (color ? `<i style="background:${color}"></i>` : '') + '<span></span>'; b.querySelector('span').textContent = label;
-  b.onclick = () => {
-    if (group === 'type') { state.type = key; render(); fitVisible(); return; }   // one category at a time, or 'all'
-    if (group === 'status') state.statuses.has(key) ? state.statuses.delete(key) : state.statuses.add(key);
-    else state.period = key;
-    render();
-  };
-  return b;
+function chip(label, on, color, fn) {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'chip f' + (on ? ' on' : ' off');
+  b.innerHTML = (color ? `<i style="background:${color}"></i>` : '') + `<span>${esc(label)}</span>`; b.onclick = fn; return b;
 }
-function renderChips() {
+function renderFilters() {
   const fill = (id, nodes) => { const e = $(id); e.innerHTML = ''; nodes.forEach((n) => e.appendChild(n)); };
-  fill('chipType', ['all', ...TYPES].map((k) => chip('type', k, t(k), state.type === k, k === 'all' ? null : COLORS[k])));
-  fill('chipStatus', STATUSES.map((k) => chip('status', k, t(k), state.statuses.has(k), RING[k] === '#FFFFFF' ? '#B9B2A6' : RING[k])));
-  fill('chipPeriod', PERIODS.map(([k, d]) => chip('period', d, t(k), state.period === d)));
+  const cnt = (type) => [...state.rows.values()].filter((r) => r.type === type && r.status !== 'rejected').length;
+  const allOn = TYPES.every((k) => state.types.has(k));
+  const typeChips = [chip(`${tt('all')}`, allOn, '#E5CB65', () => { TYPES.forEach((k) => (allOn ? state.types.delete(k) : state.types.add(k))); if (allOn) state.types = new Set(TYPES); render(); fitVisible(); })];
+  TYPES.forEach((k) => typeChips.push(chip(`${tt(k)} ${cnt(k)}`, state.types.has(k), COLORS[k], () => {
+    if (state.types.size === TYPES.length) state.types = new Set([k]); else state.types.has(k) ? state.types.delete(k) : state.types.add(k);
+    if (!state.types.size) state.types = new Set(TYPES);
+    render(); fitVisible();
+  })));
+  fill('chipType', typeChips);
+  fill('chipStatus', STATUSES.map((k) => chip(tt(k), state.statuses.has(k), STATUS_COLOR[k], () => { state.statuses.has(k) ? state.statuses.delete(k) : state.statuses.add(k); render(); })));
+  fill('chipPeriod', PERIODS.map(([k, d]) => chip(tt(k), state.period === d, null, () => { state.period = d; render(); })));
+  const sel = $('selVol'), names = new Set([...state.rows.values()].map((r) => r.reported_by).filter(Boolean)); state.users.forEach((u) => names.add(u.username));
+  const cur = state.vol, uNote = state.users.find((u) => String(u.username).toLowerCase() === String(cur).toLowerCase() && u.status === 'active');
+  $('btnVolNote').classList.toggle('hidden', !(state.admin && uNote)); if (uNote) $('btnVolNote').textContent = tt('noteBtn');
+  sel.innerHTML = `<option value="">${esc(tt('allVolunteers'))}</option>` + [...names].sort().map((n) => `<option value="${esc(n)}"${n === cur ? ' selected' : ''}>${esc(n)} (${[...state.rows.values()].filter((r) => r.reported_by === n).length})</option>`).join('');
 }
 
 // ------------------------------------------------------------------ detail
-function closeDetail() { state.selected = null; $('detail').classList.add('hidden'); $('list').querySelectorAll('.item.sel').forEach((e) => e.classList.remove('sel')); }
-function demoPhoto(r) {
+function closeDetail() { state.selected = null; $('detail').classList.add('hidden'); document.querySelectorAll('.fi.sel').forEach((e) => e.classList.remove('sel')); markers.forEach((m, id) => m.setIcon(pointIcon(state.rows.get(id)))); }
+function demoPhoto(r, clean) {
   const c = COLORS[r.type] || '#888';
-  const box = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="none" stroke="${c}" stroke-width="5"/>`;
-  const base = '<rect width="400" height="300" fill="#8EB7D6"/><rect y="130" width="400" height="170" fill="#6F7378"/><polygon points="200,130 30,300 370,300" fill="#7E8389"/>';
-  let body;
-  switch (r.type) {
-    case 'bump': body = '<polygon points="70,215 330,215 360,255 40,255" fill="#E9B923"/>' + [...Array(9)].map((_, i) => `<polygon points="${75 + i * 30},215 ${90 + i * 30},215 ${94 + i * 30},255 ${79 + i * 30},255" fill="#222"/>`).join('') + box(35, 195, 330, 70); break;
-    case 'crack': body = '<polyline points="150,180 175,205 165,235 205,260 215,290" fill="none" stroke="#15171A" stroke-width="4"/>' + box(135, 170, 100, 130); break;
-    case 'crack_severe': body = '<polyline points="150,175 178,205 160,238 208,262 214,292" fill="none" stroke="#15171A" stroke-width="9"/><polyline points="178,205 230,215 262,245" fill="none" stroke="#15171A" stroke-width="6"/>' + box(130, 165, 150, 135); break;
-    case 'electric': body = '<rect x="70" y="30" width="14" height="190" fill="#6B4A2B"/><rect x="40" y="55" width="80" height="8" fill="#6B4A2B"/><path d="M120 59 Q 200 170 270 255 T 340 262" fill="none" stroke="#111" stroke-width="3"/><polygon points="300,225 285,258 300,256 292,285 322,245 305,247" fill="#FFD400"/>' + box(250, 215, 110, 80); break;
-    case 'water': body = '<rect x="40" y="190" width="150" height="16" fill="#9AA0A6"/><rect x="215" y="190" width="150" height="16" fill="#9AA0A6"/><ellipse cx="205" cy="255" rx="100" ry="22" fill="#4FC3F7" opacity=".55"/><path d="M190 195 Q 200 120 215 195" fill="none" stroke="#4FC3F7" stroke-width="6"/><path d="M192 195 Q 165 140 140 225" fill="none" stroke="#4FC3F7" stroke-width="5"/><path d="M212 195 Q 250 140 275 225" fill="none" stroke="#4FC3F7" stroke-width="5"/>' + box(110, 110, 190, 170); break;
-    case 'sewer': body = '<ellipse cx="200" cy="230" rx="70" ry="24" fill="#8A8F98"/><ellipse cx="200" cy="230" rx="52" ry="16" fill="#0b0c0e"/>' + box(120, 195, 160, 70); break;
-    case 'telecom': body = '<rect x="140" y="70" width="90" height="150" rx="4" fill="#7F8790"/><polygon points="230,70 285,90 285,210 230,220" fill="#5E656D"/><path d="M180 150 Q 190 250 240 262" stroke="#E53935" stroke-width="4" fill="none"/><path d="M165 150 Q 150 240 120 258" stroke="#1E88E5" stroke-width="4" fill="none"/><path d="M200 150 Q 215 230 300 250" stroke="#43A047" stroke-width="4" fill="none"/>' + box(100, 60, 200, 215); break;
-    case 'other': body = '<polygon points="200,170 255,260 145,260" fill="#FFC107" stroke="#222" stroke-width="5"/><text x="200" y="250" font-size="52" font-weight="700" text-anchor="middle" fill="#222" font-family="sans-serif">!</text>' + box(130, 155, 140, 120); break;
-    default: body = '<ellipse cx="190" cy="235" rx="62" ry="20" fill="#1c1d20"/>' + box(105, 195, 170, 66);
-  }
-  return 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">${base}${body}<text x="12" y="288" font-size="15" fill="#fff" opacity=".85" font-family="sans-serif">DEMO</text></svg>`);
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#2c4b78"/><rect y="130" width="400" height="170" fill="#4a5568"/><polygon points="200,130 30,300 370,300" fill="#5b6577"/><ellipse cx="190" cy="235" rx="62" ry="20" fill="#0c0f14"/>${clean ? '' : `<rect x="105" y="195" width="170" height="66" rx="8" fill="none" stroke="${c}" stroke-width="5"/>`}<text x="12" y="288" font-size="15" fill="#fff" opacity=".85" font-family="sans-serif">DEMO</text></svg>`);
 }
+const distM = (a, b) => { const R = 6371000, p = Math.PI / 180, dl = (b.lat - a.lat) * p, dn = (b.lon - a.lon) * p, h = Math.sin(dl / 2) ** 2 + Math.cos(a.lat * p) * Math.cos(b.lat * p) * Math.sin(dn / 2) ** 2; return 2 * R * Math.asin(Math.min(1, Math.sqrt(h))); };
+const rpcMissing = (e) => /could not find the function|PGRST202|does not exist/i.test(String((e && (e.message || e.code)) || e));
 async function openDetail(id, silent) {
   const r = state.rows.get(id); if (!r) return;
   state.selected = id;
-  const d = $('detail'); d.classList.remove('hidden');
-  d.innerHTML = `<button class="back" id="dBack">${lang === 'ar' ? '→' : '←'} ${t('back')}</button>
-    <div class="photo" id="dPhoto">${t('loadingPhoto')}</div>
-    <h2><span class="dot" style="background:${COLORS[r.type]}"></span><span id="dType"></span><span class="badge ${r.status}" id="dBadge"></span></h2>
-    <dl class="kv"><dt>${t('time')}</dt><dd class="rtl" id="dTime"></dd><dt>${t('location')}</dt><dd id="dLoc"></dd><dt>${t('accuracy')}</dt><dd class="rtl" id="dAcc"></dd><dt>${t('reporter')}</dt><dd class="rtl" id="dBy"></dd><dt>${t('source')}</dt><dd class="rtl" id="dSrc"></dd><dt>${t('confirmations')}</dt><dd class="rtl" id="dConfirm"></dd><dt>${t('age')}</dt><dd class="rtl" id="dAge"></dd>${r.note ? `<dt>${t('vnote')}</dt><dd class="rtl" id="dVNote"></dd>` : ''}</dl>
-    <div class="links"><a class="lnk" target="_blank" rel="noopener" id="dMap">${t('openMap')}</a><a class="lnk alt" target="_blank" rel="noopener" id="dDir">${t('directions')}</a><button class="lnk share" id="dShare">${t('share')}</button><a class="lnk wa" target="_blank" rel="noopener" id="dWa">${t('whatsapp')}</a></div>
-    <div class="stbox"><div class="gt">${t('status')}</div><div class="stbtns" id="dBtns"></div><textarea id="dNote" placeholder="${t('note')}" maxlength="480"></textarea><button class="save" id="dSave">${t('save')}</button><div class="who" id="dWho"></div></div>`;
+  const d = $('detail'); d.classList.remove('hidden'); $('exportPanel').classList.add('hidden');
+  document.getElementById('side').classList.add('full');
+  const c = COLORS[r.type] || '#888';
+  d.innerHTML = `<button class="back" id="dBack" type="button">${lang === 'ar' ? '→' : '←'} ${esc(tt('back'))}</button>
+    <h2><span class="ico" style="width:38px;height:38px;border-radius:12px;border:1.5px solid ${c};background:${c}22;color:${c};display:inline-flex;align-items:center;justify-content:center">${svg(r.type, 22)}</span>${esc(tt(r.type))}<span class="badge ${r.status}" style="margin-inline-start:auto">${esc(tt(r.status))}</span></h2>
+    <div class="photo" id="dPhoto">${esc(tt('loadingPhoto'))}</div>
+    <dl class="kv"><dt>${esc(tt('reporter'))}</dt><dd>${esc(r.reported_by || '—')}</dd><dt>${esc(tt('time'))}</dt><dd>${esc(fmtTime(r.detected_at))}</dd>
+      <dt>${esc(tt('location'))}</dt><dd dir="ltr">${r.lat.toFixed(6)}, ${r.lon.toFixed(6)}</dd><dt>${esc(tt('accuracy'))}</dt><dd>${r.accuracy_m == null ? '—' : '±' + Math.round(r.accuracy_m) + ' ' + esc(tt('m'))}</dd>
+      <dt>${esc(tt('size'))}</dt><dd>${esc(sizeText(r))}</dd><dt>${esc(tt('confirmations'))}</dt><dd>${r.confirmations || 1}</dd><dt>${esc(tt('age'))}</dt><dd>${esc(ageText(r))}</dd>
+      <dt>${esc(tt('source'))}</dt><dd>${esc(r.manual ? tt('manual') : tt('auto'))}</dd>${r.note ? `<dt>${esc(tt('vnote'))}</dt><dd>${esc(r.note)}</dd>` : ''}</dl>
+    <div class="links"><a class="lnk" target="_blank" rel="noopener" href="${mapsLink(r)}">${esc(tt('openMap'))}</a><a class="lnk" target="_blank" rel="noopener" href="${dirLink(r)}">${esc(tt('directions'))}</a><a class="lnk" target="_blank" rel="noopener" href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${r.lat},${r.lon}">${esc(tt('streetView'))}</a><button class="lnk" id="dCopy" type="button">${esc(tt('copyCoords'))}</button><button class="lnk" id="dShare" type="button">${esc(tt('share'))}</button></div>
+    <div class="det-h">${esc(tt('moreDet'))}</div><dl class="kv" id="dMore"></dl>
+    <div class="det-h">${esc(tt('dNearby', { n: 60 }))}</div><div class="near" id="dNear"></div>
+    <div class="card ai"><div class="q">${esc(tt('aiQ'))}<small>${esc(tt('aiHint'))}</small></div>
+      <button class="chip f ${r.ai_verdict === 'correct' ? 'on' : 'off'}" id="aiOk" type="button">✓ ${esc(tt('aiOk'))}</button><button class="chip f ${r.ai_verdict === 'wrong' ? 'on' : 'off'}" id="aiBad" type="button">✕ ${esc(tt('aiBad'))}</button></div>
+    <div class="gt">${esc(tt('status'))}</div><div class="stbtns" id="dBtns"></div>
+    <textarea id="dNote" maxlength="480" placeholder="${esc(tt('note'))}"></textarea>
+    <p class="note">${esc(tt('fixedNote'))}</p>
+    <button class="btn gold" id="dSave" type="button" style="margin:6px 0 10px">${esc(tt('save'))}</button>
+    <button class="btn danger" id="dDel" type="button">🗑 ${esc(tt('del'))}</button>`;
   $('dBack').onclick = closeDetail;
-  $('dType').textContent = t(r.type); $('dBadge').textContent = t(r.status);
-  $('dTime').textContent = fmtTime(r.detected_at); $('dLoc').textContent = `${r.lat.toFixed(6)}, ${r.lon.toFixed(6)}`;
-  $('dAcc').textContent = r.accuracy_m == null ? '—' : `${Math.round(r.accuracy_m)} ${t('m')}`;
-  $('dBy').textContent = r.reported_by || '—';
-  $('dSrc').textContent = r.manual ? t('manual') : t('auto');
-  $('dConfirm').textContent = String(r.confirmations || 1);
-  $('dAge').textContent = ageText(r);
-  if (r.note) $('dVNote').textContent = r.note;
-  $('dMap').href = mapsLink(r); $('dDir').href = dirLink(r);
-  const shareText = `${t(r.type)} - ${fmtTime(r.detected_at)}\n${r.note ? r.note + '\n' : ''}${ageText(r)}\n${r.lat.toFixed(6)}, ${r.lon.toFixed(6)}\n${mapsLink(r)}`;
-  let photoUrl = null;
-  $('dWa').href = 'https://wa.me/?text=' + encodeURIComponent(shareText);
-  $('dShare').onclick = async () => {
-    if (navigator.share) {
-      try {
-        if (photoUrl && navigator.canShare) {   // the photo goes with the text where the phone allows it
-          const blob = await (await fetch(photoUrl)).blob();
-          const file = new File([blob], 'report.jpg', { type: 'image/jpeg' });
-          if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: t('appTitle'), text: shareText }); return; }
-        }
-        await navigator.share({ title: t('appTitle'), text: shareText }); return;
-      } catch (e) { if (e && e.name === 'AbortError') return; }
-    }
-    try { await navigator.clipboard.writeText(shareText); toast(t('copied')); } catch (_) { window.prompt(t('share'), shareText); }
-  };
   $('dNote').value = r.status_note || '';
-  $('dWho').textContent = r.status_at ? `${t('by')}: ${fmtTime(r.status_at)}` : '';
+  const shareText = `${tt(r.type)} - ${fmtTime(r.detected_at)}\n${r.note ? r.note + '\n' : ''}${r.lat.toFixed(6)}, ${r.lon.toFixed(6)}\n${mapsLink(r)}`;
+  $('dCopy').onclick = async () => { const txt = `${r.lat.toFixed(6)}, ${r.lon.toFixed(6)}`; try { await navigator.clipboard.writeText(txt); toast(tt('copied')); } catch (_) { window.prompt(tt('copyCoords'), txt); } };
+  const more = [];
+  more.push([tt('dId'), `<span dir="ltr">${esc(String(r.id).slice(0, 8))}</span>`]);
+  if (r.created_at) more.push([tt('dReceived'), esc(fmtTime(r.created_at))]);
+  if ((r.confirmations || 1) > 1 && r.last_seen_at) more.push([tt('dLastConf'), esc(fmtTime(r.last_seen_at))]);
+  if (r.status_at) more.push([tt('dStatusAt'), esc(fmtTime(r.status_at))]);
+  if (r.status_note) more.push([tt('by'), esc(r.status_note)]);
+  more.push([tt('dApp'), r.app_version ? `<span dir="ltr">v${esc(r.app_version)}</span>` : esc(tt('unknown'))]);
+  if (r.reported_by) more.push([tt('dSame'), String([...state.rows.values()].filter((x) => x.reported_by === r.reported_by).length)]);
+  more.push([tt('dAiVerdict'), esc(r.ai_verdict === 'correct' ? tt('aiOk') : r.ai_verdict === 'wrong' ? tt('aiBad') : tt('verdictNone'))]);
+  $('dMore').innerHTML = more.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('');
+  const nearEl = $('dNear'), near = [...state.rows.values()].filter((x) => x.id !== r.id).map((x) => ({ x, d: distM(r, x) })).filter((o) => o.d <= 60).sort((a, b) => a.d - b.d).slice(0, 6);
+  if (!near.length) nearEl.innerHTML = `<small class="note">${esc(tt('dNoNearby'))}</small>`;
+  near.forEach(({ x, d }) => {
+    const b = document.createElement('button'); b.type = 'button';
+    b.innerHTML = `<i style="background:${COLORS[x.type] || '#888'}"></i><span>${esc(tt(x.type))} · ${esc(tt(x.status))}</span><em>${Math.round(d)} ${esc(tt('m'))}</em>`;
+    b.onclick = () => { openDetail(x.id); if (map) map.setView([x.lat, x.lon], Math.max(map.getZoom(), 17)); };
+    nearEl.appendChild(b);
+  });
+  $('dShare').onclick = async () => {
+    if (navigator.share) { try { await navigator.share({ title: tt('appTitle'), text: shareText }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+    try { await navigator.clipboard.writeText(shareText); toast(tt('copied')); } catch (_) { window.prompt(tt('share'), shareText); }
+  };
   let chosen = r.status;
   const btns = $('dBtns');
-  STATUSES.forEach((s) => { const b = document.createElement('button'); b.textContent = t(s); b.className = s === chosen ? 'on' : ''; b.onclick = () => { chosen = s; [...btns.children].forEach((x) => x.classList.remove('on')); b.classList.add('on'); }; btns.appendChild(b); });
+  ['in_progress', 'fixed', 'rejected'].forEach((s) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = tt(s); b.className = (s === chosen ? 'on ' : '') + s; b.onclick = () => { chosen = s; [...btns.children].forEach((x) => x.classList.remove('on')); b.classList.add('on'); }; btns.appendChild(b); });
   $('dSave').onclick = async () => {
-    const note = $('dNote').value.trim() || null; $('dSave').disabled = true; const prev = r.status;
-    if (DEMO) { r.status = chosen; r.status_note = note; r.status_at = new Date().toISOString(); }
-    else {
+    const note = $('dNote').value.trim() || null; $('dSave').disabled = true;
+    if (!DEMO) {
       const { error } = await sb.from('reports').update({ status: chosen, status_note: note }).eq('id', r.id);
-      if (error) { console.error(error); toast(t('saveErr')); $('dSave').disabled = false; return; }
-      r.status = chosen; r.status_note = note; r.status_at = new Date().toISOString();
+      if (error) { console.error(error); toast(tt('saveErr')); $('dSave').disabled = false; return; }
     }
-    if (chosen === 'fixed' && prev !== 'fixed') { closeDetail(); render(); scheduleDelete(r, prev); return; }
-    toast(t('saved')); render(); openDetail(r.id, true);
+    r.status = chosen; r.status_note = note; r.status_at = new Date().toISOString();
+    toast(tt('saved')); render(); openDetail(r.id, true);
+  };
+  const verdict = async (v) => {
+    if (!DEMO) {
+      const { data: u } = await sb.auth.getUser();
+      const { error } = await sb.from('reports').update({ ai_verdict: v, ai_verdict_by: u && u.user ? u.user.id : null, ai_verdict_at: new Date().toISOString() }).eq('id', r.id);
+      if (error) { console.error(error); toast(tt('saveErr')); return; }
+    }
+    r.ai_verdict = v; toast(tt('saved')); openDetail(r.id, true);
+  };
+  $('aiOk').onclick = () => verdict('correct'); $('aiBad').onclick = () => verdict('wrong');
+  $('dDel').onclick = async () => {
+    if (!window.confirm(tt('delConfirm'))) return;
+    if (!DEMO) {
+      const paths = [r.photo_path, r.clean_photo_path].filter(Boolean);
+      if (paths.length) await sb.storage.from('report-photos').remove(paths);
+      const { error } = await sb.from('reports').delete().eq('id', r.id);
+      if (error) { console.error(error); toast(tt('actionErr')); return; }
+    }
+    state.rows.delete(r.id); closeDetail(); render(); toast(tt('deleted'));
   };
   // photo
   const ph = $('dPhoto');
-  if (!r.photo_path && !DEMO) { ph.textContent = t('noPhoto'); }
+  const hasMain = DEMO || !!r.photo_path, hasClean = !!r.clean_photo_path;
+  if (!hasMain && !hasClean) ph.textContent = tt('noPhoto');
   else {
-    let url = null;
-    if (DEMO) url = demoPhoto(r);
-    else { const { data, error } = await sb.storage.from('report-photos').createSignedUrl(r.photo_path, 900); if (!error) url = data.signedUrl; }
+    const signed = async (path) => { const { data, error } = await sb.storage.from('report-photos').createSignedUrl(path, 900); return error ? null : data.signedUrl; };
+    const urls = [];
+    if (hasMain) { const u = DEMO ? demoPhoto(r, false) : await signed(r.photo_path); if (u) urls.push({ label: tt('photoAnn'), url: u }); }
+    if (hasClean) { const u = DEMO ? demoPhoto(r, true) : await signed(r.clean_photo_path); if (u) urls.push({ label: tt('photoClean'), url: u }); }
     if (state.selected !== id) return;
-    if (url) { photoUrl = DEMO ? null : url; const img = new Image(); img.alt = ''; img.onload = () => { ph.textContent = ''; ph.appendChild(img); }; img.onerror = () => { ph.textContent = t('noPhoto'); }; img.src = url; img.onclick = () => lightbox(url); }
-    else ph.textContent = t('noPhoto');
+    if (urls.length) showPhoto(ph, urls, r); else ph.textContent = tt('noPhoto');
   }
-  if (!silent) { render(); }
+  if (!silent) markers.forEach((m, mid) => m.setIcon(pointIcon(state.rows.get(mid))));
 }
-function lightbox(url) { const d = document.createElement('div'); d.className = 'lightbox'; d.innerHTML = '<img alt="">'; d.firstChild.src = url; d.onclick = () => d.remove(); document.body.appendChild(d); }
-
-// ------------------------------------------------------------------ fixed reports leave the system (photo + row) so nothing piles up
-async function purge(id, photoPath, quiet) {
-  if (DEMO) { state.rows.delete(id); state.fixedTotal++; render(); if (!quiet) toast(t('deleted')); return; }
-  if (photoPath) await sb.storage.from('report-photos').remove([photoPath]);
-  const { error } = await sb.from('reports').delete().eq('id', id).eq('status', 'fixed');
-  if (error) { console.error(error); return; }
-  if (state.rows.delete(id)) state.fixedTotal++;
-  if (state.selected === id) closeDetail();
-  render(); if (!quiet) toast(t('deleted'));
+// the photo in the report panel: tabs when there is also a clean copy, an "Enlarge" button, and a tap opens the full-screen viewer
+function showPhoto(ph, urls, r) {
+  let cur = 0;
+  ph.textContent = '';
+  const img = new Image(); img.alt = ''; img.onerror = () => { ph.textContent = tt('noPhoto'); };
+  const cap = { title: `${tt(r.type)} · ${r.reported_by || '—'}`, sub: fmtTime(r.detected_at) };
+  img.onclick = () => viewer(urls, cur, cap);
+  ph.appendChild(img);
+  const bn = document.createElement('span'); bn.className = 'blur'; bn.textContent = tt('blurNote'); ph.appendChild(bn);
+  const en = document.createElement('button'); en.type = 'button'; en.className = 'enl'; en.textContent = tt('enlarge'); en.onclick = () => viewer(urls, cur, cap); ph.appendChild(en);
+  if (urls.length > 1) {
+    const tabs = document.createElement('div'); tabs.className = 'ptabs'; ph.appendChild(tabs);
+    urls.forEach((u, i) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = u.label; b.onclick = () => { cur = i; img.src = u.url; [...tabs.children].forEach((x, k) => x.classList.toggle('on', k === i)); }; tabs.appendChild(b); });
+    tabs.firstChild.classList.add('on');
+  }
+  img.src = urls[0].url;
 }
-function scheduleDelete(r, prev) {
-  let left = 10;
-  const bar = $('toast'); bar.classList.remove('hidden'); clearTimeout(toast._t);
-  const draw = () => {
-    bar.innerHTML = '';
-    const s = document.createElement('span'); s.textContent = `${t('fixedDone')} ${left} ${t('secs')}`;
-    const b = document.createElement('button'); b.textContent = t('undo'); b.style.cssText = 'margin-inline-start:12px;padding:2px 12px;border-radius:9px;background:#FF6A3D;color:#fff;font-weight:700';
-    b.onclick = async () => { clearInterval(timer); bar.classList.add('hidden'); r.status = prev; if (!DEMO) await sb.from('reports').update({ status: prev }).eq('id', r.id); render(); };
-    bar.append(s, b);
+// full-screen photo viewer: zoom with the buttons, the mouse wheel, a double click or two fingers; drag to move; Esc or ✕ to close
+function viewer(items, start, cap) {
+  let s = 1, x = 0, y = 0;
+  const d = document.createElement('div'); d.className = 'lightbox';
+  d.innerHTML = `<div class="lbtop"><div class="lbcap">${esc(cap.title)}<small>${esc(cap.sub)}</small></div><div class="lbbtns"><button type="button" data-a="in" title="${esc(tt('zoomIn'))}">＋</button><button type="button" data-a="out" title="${esc(tt('zoomOut'))}">－</button><button type="button" data-a="reset" title="${esc(tt('zoomReset'))}">1:1</button><a data-a="dl" target="_blank" rel="noopener" title="${esc(tt('download'))}">⬇</a><button type="button" class="x" data-a="x" title="${esc(tt('close'))}">✕</button></div></div><div class="lbstage"><img alt="" draggable="false"></div><div class="lbtabs"></div>`;
+  const stage = d.querySelector('.lbstage'), img = stage.firstChild, dl = d.querySelector('[data-a=dl]'), tabs = d.querySelector('.lbtabs');
+  const apply = () => { img.style.transform = `translate(${x}px,${y}px) scale(${s})`; };
+  const reset = () => { s = 1; x = 0; y = 0; apply(); };
+  const centre = () => { const r = stage.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+  const zoomAt = (f, px, py) => {
+    const r = stage.getBoundingClientRect(), u = px - (r.left + r.width / 2), v = py - (r.top + r.height / 2);
+    const ns = Math.min(8, Math.max(1, s * f)), k = ns / s;
+    x = u - k * (u - x); y = v - k * (v - y); s = ns; if (s === 1) { x = 0; y = 0; }
+    apply();
   };
-  draw();
-  const timer = setInterval(async () => {
-    left--; if (left > 0) { draw(); return; }
-    clearInterval(timer); bar.classList.add('hidden');
-    await purge(r.id, r.photo_path, false);
-  }, 1000);
+  const show = (i) => { img.src = items[i].url; dl.href = items[i].url; dl.download = 'pru-report.jpg'; reset(); [...tabs.children].forEach((b, k) => b.classList.toggle('on', k === i)); };
+  if (items.length > 1) items.forEach((it, i) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = it.label; b.onclick = () => show(i); tabs.appendChild(b); });
+  const key = (e) => { if (e.key === 'Escape') close(); else if (e.key === '+' || e.key === '=') zoomAt(1.4, ...centre()); else if (e.key === '-') zoomAt(1 / 1.4, ...centre()); else if (e.key === '0') reset(); };
+  const close = () => { d.remove(); document.removeEventListener('keydown', key); };
+  document.addEventListener('keydown', key);
+  d.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-a]'); if (!a) return;
+    const k = a.dataset.a;
+    if (k === 'x') close(); else if (k === 'in') zoomAt(1.5, ...centre()); else if (k === 'out') zoomAt(1 / 1.5, ...centre()); else if (k === 'reset') reset();
+  });
+  stage.addEventListener('wheel', (e) => { e.preventDefault(); zoomAt(e.deltaY < 0 ? 1.2 : 1 / 1.2, e.clientX, e.clientY); }, { passive: false });
+  stage.addEventListener('dblclick', (e) => { if (s > 1) reset(); else zoomAt(3, e.clientX, e.clientY); });
+  const ptr = new Map(); let pinch = 0, moved = false;
+  stage.addEventListener('pointerdown', (e) => {
+    stage.setPointerCapture(e.pointerId); ptr.set(e.pointerId, [e.clientX, e.clientY]); stage.classList.add('drag'); moved = false;
+    if (ptr.size === 2) { const [a, b] = [...ptr.values()]; pinch = Math.hypot(a[0] - b[0], a[1] - b[1]); }
+  });
+  stage.addEventListener('pointermove', (e) => {
+    if (!ptr.has(e.pointerId)) return;
+    const prev = ptr.get(e.pointerId); ptr.set(e.pointerId, [e.clientX, e.clientY]);
+    if (ptr.size === 2) { const [a, b] = [...ptr.values()], dist = Math.hypot(a[0] - b[0], a[1] - b[1]); if (pinch) zoomAt(dist / pinch, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2); pinch = dist; moved = true; }
+    else if (s > 1) { x += e.clientX - prev[0]; y += e.clientY - prev[1]; moved = true; apply(); }
+  });
+  const up = (e) => { ptr.delete(e.pointerId); pinch = 0; if (!ptr.size) stage.classList.remove('drag'); };
+  stage.addEventListener('pointerup', (e) => {
+    up(e); const r = img.getBoundingClientRect();
+    if (!moved && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) close(); // a tap beside the picture closes
+  });
+  stage.addEventListener('pointercancel', up);
+  document.body.appendChild(d); show(start || 0);
 }
 
-// ------------------------------------------------------------------ export
+// ------------------------------------------------------------------ ruler -> PDF report
+function rulerStart() {
+  state.ruler.on = true; $('btnRuler').classList.add('on'); $('rulerBar').classList.remove('hidden'); map.dragging.disable(); map.getContainer().style.cursor = 'crosshair'; map.getContainer().style.touchAction = 'none';
+  closeDetail();
+}
+function rulerStop(keepRect) {
+  state.ruler.on = false; $('btnRuler').classList.remove('on'); $('rulerBar').classList.add('hidden'); map.dragging.enable(); map.getContainer().style.cursor = ''; map.getContainer().style.touchAction = '';
+  if (!keepRect && rulerRect) { map.removeLayer(rulerRect); rulerRect = null; }
+}
+function initRuler() {
+  const c = map.getContainer(); let a = null;
+  const ll = (e) => map.mouseEventToLatLng(e);
+  c.addEventListener('pointerdown', (e) => { if (!state.ruler.on || e.target.closest('.tools,.kpis,.rulerbar,.leaflet-control')) return; a = ll(e); if (rulerRect) map.removeLayer(rulerRect); rulerRect = L.rectangle([a, a], { color: '#E5CB65', weight: 3, dashArray: '8 6', fillOpacity: .12 }).addTo(map); c.setPointerCapture(e.pointerId); e.preventDefault(); });
+  c.addEventListener('pointermove', (e) => { if (a && rulerRect) rulerRect.setBounds(L.latLngBounds(a, ll(e))); });
+  c.addEventListener('pointerup', (e) => { if (!a) return; const b = L.latLngBounds(a, ll(e)); a = null; if (b.getNorthEast().distanceTo(b.getSouthWest()) < 20) { if (rulerRect) map.removeLayer(rulerRect); rulerRect = null; return; } rulerStop(true); openExport(b); });
+}
+function exportRows(bounds) { return visibleRows().filter((r) => bounds.contains([r.lat, r.lon])); }
+function activeFilterText() {
+  const parts = [];
+  if (state.vol) parts.push(`${tt('fVolunteer')}: ${state.vol}`);
+  parts.push(`${tt('fStatus')}: ${[...state.statuses].map((s) => tt(s)).join(' / ')}`);
+  if (state.types.size < TYPES.length) parts.push(`${tt('fType')}: ${[...state.types].map((k) => tt(k)).join(' / ')}`);
+  parts.push(`${tt('fPeriod')}: ${tt(PERIODS.find(([, d]) => d === state.period)[0])}`);
+  return parts;
+}
+function openExport(bounds) {
+  const rows = exportRows(bounds), p = $('exportPanel'); $('detail').classList.add('hidden'); p.classList.remove('hidden'); document.getElementById('side').classList.add('full');
+  const km = (bounds.getNorthEast().distanceTo(L.latLng(bounds.getNorthEast().lat, bounds.getSouthWest().lng)) / 1000).toFixed(2), kn = (bounds.getNorthEast().distanceTo(L.latLng(bounds.getSouthWest().lat, bounds.getNorthEast().lng)) / 1000).toFixed(2);
+  p.innerHTML = `<button class="back" id="xBack" type="button">${lang === 'ar' ? '→' : '←'} ${esc(tt('back'))}</button><h2>📄 ${esc(tt('pdfTitle'))}</h2>
+    <div class="card"><div class="gt">${esc(tt('pdfFilters'))}</div><div class="chips">${activeFilterText().map((x) => `<span class="chip on">${esc(x)}</span>`).join('')}</div></div>
+    <div class="chip on" style="margin-bottom:8px">${esc(tt('rulerFound', { n: rows.length }))} · ${km} × ${kn} km</div>
+    <label class="ck"><input type="checkbox" id="xNames" checked>${esc(tt('pdfNames'))}</label><label class="ck"><input type="checkbox" id="xPhotos" checked>${esc(tt('pdfPhotos'))}</label><label class="ck"><input type="checkbox" id="xCoords" checked>${esc(tt('pdfCoords'))}</label>
+    <button class="btn gold" id="xGo" type="button" style="margin:12px 0 6px">${esc(tt('pdfGo'))}</button><p class="note">${esc(tt('pdfHow'))}</p>`;
+  $('xBack').onclick = () => { p.classList.add('hidden'); if (rulerRect) { map.removeLayer(rulerRect); rulerRect = null; } };
+  $('xGo').onclick = () => makeReport(rows, bounds, { names: $('xNames').checked, photos: $('xPhotos').checked, coords: $('xCoords').checked });
+}
+async function makeReport(rows, bounds, opt) {
+  const w = window.open('', '_blank'); if (!w) { toast(tt('actionErr')); return; }
+  const photos = {};
+  if (opt.photos) {
+    if (DEMO) rows.forEach((r) => { photos[r.id] = demoPhoto(r); });
+    else {
+      const paths = rows.map((r) => r.photo_path).filter(Boolean);
+      if (paths.length) { const { data } = await sb.storage.from('report-photos').createSignedUrls(paths, 900); (data || []).forEach((x) => { if (x.signedUrl) photos[x.path] = x.signedUrl; }); }
+      rows.forEach((r) => { if (r.photo_path && photos[r.photo_path]) photos[r.id] = photos[r.photo_path]; });
+    }
+  }
+  const dir = lang === 'ar' ? 'rtl' : 'ltr', ar = (k) => esc(tt(k));
+  const cards = rows.map((r) => `<div class="r"><div class="rh"><i style="background:${COLORS[r.type] || '#888'}"></i><b>${ar(r.type)}</b><span class="st st-${r.status}">${ar(r.status)}</span><span class="d">${esc(fmtTime(r.detected_at))}</span></div>
+    <div class="rb">${photos[r.id] ? `<img src="${photos[r.id]}" alt="">` : ''}<div class="kv">${opt.names ? `<div><u>${ar('reporter')}</u> ${esc(r.reported_by || '—')}</div>` : ''}${opt.coords ? `<div><u>${ar('location')}</u> <span dir="ltr">${r.lat.toFixed(6)}, ${r.lon.toFixed(6)}</span></div><div><u>${ar('accuracy')}</u> ${r.accuracy_m == null ? '—' : '±' + Math.round(r.accuracy_m) + ' ' + ar('m')}</div>` : ''}
+    <div><u>${ar('size')}</u> ${esc(sizeText(r))}</div><div><u>${ar('confirmations')}</u> ${r.confirmations || 1}</div>${r.note ? `<div><u>${ar('vnote')}</u> ${esc(r.note)}</div>` : ''}</div></div></div>`).join('');
+  w.document.write(`<!doctype html><html lang="${lang}" dir="${dir}"><head><meta charset="utf-8"><title>${ar('pdfReport')}</title><style>
+    @page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:'Segoe UI',Tahoma,sans-serif;color:#0A1A33;margin:0}
+    header{display:flex;align-items:center;gap:14px;border-bottom:3px solid #C9A93A;padding-bottom:10px;margin-bottom:12px}header img{height:64px}header h1{font-size:22px;flex:1;margin:0}header small{color:#5a6b86}
+    .f{background:#EEF3F9;border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:13px}.r{border:1px solid #D5DEEA;border-radius:12px;padding:10px;margin-bottom:10px;break-inside:avoid}
+    .rh{display:flex;align-items:center;gap:8px;font-size:15px}.rh i{width:12px;height:12px;border-radius:50%}.rh .d{margin-inline-start:auto;color:#5a6b86;font-size:12px}.st{font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;background:#E8EEF6}
+    .st-fixed{background:#CFF5DD}.st-in_progress{background:#F7EBB8}.rb{display:flex;gap:12px;margin-top:8px}.rb img{width:200px;height:auto;border-radius:8px;align-self:flex-start}.kv{flex:1;font-size:13px;line-height:1.7}.kv u{text-decoration:none;color:#5a6b86;margin-inline-end:6px}
+    </style></head><body><header><img src="${location.origin}${location.pathname.replace(/[^/]*$/, '')}assets/logo.png" alt=""><h1>${ar('pdfReport')} · PRU</h1><small>${esc(new Date().toLocaleDateString(lang === 'ar' ? 'ar-SY-u-nu-latn' : lang))}</small></header>
+    <div class="f"><b>${ar('pdfArea')}:</b> ${bounds.getSouth().toFixed(4)}, ${bounds.getWest().toFixed(4)} → ${bounds.getNorth().toFixed(4)}, ${bounds.getEast().toFixed(4)} · ${esc(tt('rulerFound', { n: rows.length }))}<br>${activeFilterText().map(esc).join(' · ')}</div>
+    ${cards || `<p>${ar('pdfNone')}</p>`}<script>setTimeout(function(){window.print()},900)<\/script></body></html>`);
+  w.document.close();
+}
 function exportCsv() {
   const rows = visibleRows(); const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const lines = [T[lang].csvHead.map(q).join(',')];
-  for (const r of rows) lines.push([r.id, r.detected_at, t(r.type), t(r.status), r.lat, r.lon, r.accuracy_m ?? '', r.manual ? 1 : 0, r.reported_by ?? '', mapsLink(r), r.note ?? '', r.status_note ?? ''].map(q).join(','));
+  const head = S.csvHead[LANGS.indexOf(lang)];
+  const lines = [head.map(q).join(',')];
+  for (const r of rows) lines.push([r.id, r.detected_at, tt(r.type), tt(r.status), r.lat, r.lon, r.accuracy_m ?? '', r.reported_by ?? '', r.width_cm ?? '', r.length_cm ?? '', mapsLink(r), r.note ?? '', r.status_note ?? ''].map(q).join(','));
   const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `reports-${new Date().toISOString().slice(0, 10)}.csv`; a.click(); URL.revokeObjectURL(a.href);
 }
 
-// ------------------------------------------------------------------ app users (administrators only)
+// ------------------------------------------------------------------ volunteers page
 const genCode = () => { const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; const r = new Uint32Array(8); crypto.getRandomValues(r); return [...r].map((x) => a[x % a.length]).join(''); };
-let demoUsers = [
-  { id: 'u1', username: 'Mohammed', status: 'active', created_at: new Date(Date.now() - 9 * 864e5).toISOString(), activated_at: new Date(Date.now() - 8 * 864e5).toISOString(), last_seen_at: new Date(Date.now() - 36e5).toISOString(), reports: 14 },
-  { id: 'u2', username: 'Ahmad', status: 'waiting', created_at: new Date(Date.now() - 864e5).toISOString(), activated_at: null, last_seen_at: null, reports: 0 },
-];
-async function usersList() { if (DEMO) return demoUsers; const { data, error } = await sb.rpc('admin_list_app_users'); if (error) throw error; return data || []; }
 async function usersCall(fn, args) {
   if (DEMO) {
-    if (fn === 'admin_create_app_user') demoUsers.unshift({ id: 'u' + Date.now(), username: args.p_username, status: 'waiting', created_at: new Date().toISOString(), activated_at: null, last_seen_at: null, reports: 0 });
-    else { const u = demoUsers.find((x) => x.id === args.p_id); if (u) { if (fn === 'admin_delete_app_user') demoUsers = demoUsers.filter((x) => x !== u); else if (fn === 'admin_revoke_app_user') u.status = 'revoked'; else if (fn === 'admin_reset_app_user') { u.status = 'waiting'; u.activated_at = null; } } }
+    if (fn === 'admin_merge_app_users') { const a = state.users.find((x) => x.id === args.p_absorb), k = state.users.find((x) => x.id === args.p_keep); if (a && k) { let n = 0; for (const r of state.rows.values()) if (r.reported_by === a.username) { r.reported_by = k.username; n++; } k.reports = (k.reports || 0) + (a.reports || 0); state.users = state.users.filter((x) => x !== a); return { reports: n, kept: k.username, removed: a.username }; } return null; }
+    if (fn === 'admin_create_app_user') state.users.unshift({ id: 'u' + Date.now(), username: args.p_username, status: 'waiting', created_at: new Date().toISOString(), reports: 0, sharing: false });
+    else { const u = state.users.find((x) => x.id === args.p_id); if (u) { if (fn === 'admin_delete_app_user') state.users = state.users.filter((x) => x !== u); else if (fn === 'admin_revoke_app_user') u.status = 'revoked'; else if (fn === 'admin_reset_app_user') { u.status = 'waiting'; u.activated_at = null; } } }
     return;
   }
-  const { error } = await sb.rpc(fn, args); if (error) throw error;
+  const { data, error } = await sb.rpc(fn, args); if (error) throw error;
+  return data;
 }
-function userError(e) { const m = String((e && e.message) || e); return m.includes('username taken') ? t('uTaken') : m.includes('bad') ? t('uBad') : t('uErr'); }
-async function checkAdmin() {
-  if (DEMO) { $('btnUsers').classList.remove('hidden'); return; }
-  try { const { data } = await sb.rpc('is_admin'); $('btnUsers').classList.toggle('hidden', data !== true); } catch (_) { $('btnUsers').classList.add('hidden'); }
+function userError(e) { const m = String((e && e.message) || e); return m.includes('username taken') ? tt('uTaken') : m.includes('bad') ? tt('uBad') : tt('actionErr'); }
+function renderUsersPage() {
+  const us = state.users, online = us.filter((u) => u.last_seen_at && Date.now() - new Date(u.last_seen_at).getTime() < 3 * 60e3).length;
+  const kp = [[tt('uTotal'), us.filter((u) => u.status !== 'revoked').length, '#F2F7FC'], [tt('uOnline'), online, '#22C55E'], [tt('uSharing'), us.filter((u) => u.sharing).length, '#E5CB65'], [tt('uRevokedK'), us.filter((u) => u.status === 'revoked').length, '#E5484D']];
+  $('userKpis').innerHTML = kp.map(([l, n, c]) => `<div class="kcard"><b style="color:${c}">${n}</b><span>${esc(l)}</span></div>`).join('');
+  const tbl = $('userTable');
+  if (!us.length) { tbl.innerHTML = `<tr><td class="empty">${esc(tt('uNone'))}</td></tr>`; return; }
+  tbl.innerHTML = `<thead><tr><th>${esc(tt('uTotal'))}</th><th>${esc(tt('status'))}</th><th>${esc(tt('uDevice'))}</th><th>${esc(tt('uLast'))}</th><th>${esc(tt('uShare'))}</th><th>${esc(tt('reports'))}</th><th></th></tr></thead><tbody></tbody>`;
+  const body = tbl.querySelector('tbody');
+  for (const u of us) {
+    const live = u.last_seen_at && Date.now() - new Date(u.last_seen_at).getTime() < 3 * 60e3, dot = live ? '#22C55E' : u.status === 'revoked' ? '#E5484D' : '#7D93B3';
+    const st = u.status === 'active' ? tt('uActive') : u.status === 'revoked' ? tt('uRevoked') : tt('uWaiting');
+    const dev = u.abi ? `${u.abi === 'arm64' ? '64' : u.abi === 'arm32' ? '32' : u.abi} bit${u.app_version ? ' · v' + u.app_version : ''}` : '—';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><span class="av">${esc(u.username[0])}</span>${esc(u.username)}</td><td><span class="st"><i style="background:${dot}"></i>${esc(st)}</span></td><td><span dir="ltr">${esc(dev)}</span></td><td>${esc(u.last_seen_at ? agoText(u.last_seen_at) : tt('neverSeen'))}</td>
+      <td>${u.sharing ? `<span style="color:#86efac">✓ ${esc(tt('uAgreed'))}</span>` : `<span class="mut" style="color:var(--mut)">${esc(tt('uNotShared'))}</span>`}</td><td>${u.reports || 0}</td><td><div class="acts"></div></td>`;
+    const act = tr.querySelector('.acts');
+    const btn = (label, fn, cls) => { const b = document.createElement('button'); b.type = 'button'; b.className = cls || ''; b.textContent = label; b.onclick = fn; act.appendChild(b); };
+    if (u.status === 'active') btn(tt('noteBtn'), () => openNote(u.username), 'gld');
+    if (us.length > 1) btn(tt('uMerge'), () => openMerge(u));
+    if (u.sharing) btn(tt('uOnMap'), () => { location.hash = '#/map'; setTimeout(() => { const p = state.presence.find((x) => x.username === u.username); if (p && map) map.setView([p.lat, p.lon], 16); }, 300); });
+    btn(tt('uReset'), async () => { if (!window.confirm(tt('uConfirmReset'))) return; const code = genCode(); try { await usersCall('admin_reset_app_user', { p_id: u.id, p_code: code }); showUserCode(u.username, code); await refreshUsers(); } catch (e) { toast(userError(e)); } });
+    if (u.status !== 'revoked') btn(tt('uRevoke'), async () => { if (!window.confirm(tt('uConfirmRevoke'))) return; try { await usersCall('admin_revoke_app_user', { p_id: u.id }); await refreshUsers(); } catch (e) { toast(userError(e)); } });
+    btn(tt('uDelete'), async () => { if (!window.confirm(tt('uConfirmDelete'))) return; try { await usersCall('admin_delete_app_user', { p_id: u.id }); await refreshUsers(); } catch (e) { toast(userError(e)); } }, 'warn');
+    body.appendChild(tr);
+  }
 }
-function closeUsers() { $('usersModal').classList.add('hidden'); }
-async function openUsers() { $('usersModal').classList.remove('hidden'); await renderUsers(null); }
-async function renderUsers(shown) {
-  const body = $('usersBody'); body.innerHTML = '';
-  const form = document.createElement('div'); form.className = 'uform';
-  form.innerHTML = `<h3></h3><div class="urow"><input id="uName" maxlength="30" autocomplete="off"><input id="uCodeIn" maxlength="64" autocomplete="off" dir="ltr"><button class="btn2" id="uGen" type="button"></button><button class="btn2 pri" id="uCreate" type="button"></button></div><p class="uhint"></p>`;
-  form.querySelector('h3').textContent = t('newUser');
-  form.querySelector('#uName').placeholder = t('uName'); form.querySelector('#uCodeIn').placeholder = t('uCode'); form.querySelector('#uGen').textContent = t('uGen'); form.querySelector('#uCreate').textContent = t('uCreate');
-  form.querySelector('.uhint').textContent = t('uHint');
-  body.appendChild(form);
-  const codeIn = form.querySelector('#uCodeIn'); codeIn.value = genCode();
-  form.querySelector('#uGen').onclick = () => { codeIn.value = genCode(); };
-  const showCode = (name, code) => { renderUsers({ name, code }); };
-  form.querySelector('#uCreate').onclick = async () => {
-    const name = form.querySelector('#uName').value.trim(), code = codeIn.value.trim();
-    try { await usersCall('admin_create_app_user', { p_username: name, p_code: code }); showCode(name, code); } catch (e) { toast(userError(e)); }
+async function refreshUsers() { await loadUsers(); renderUsersPage(); renderFilters(); renderNotes(); }
+function showUserCode(name, code) {
+  const b = $('userCode'); b.classList.remove('hidden');
+  b.innerHTML = `<p class="note">${esc(tt('uCodeShown'))}</p><div class="big">${esc(name)}   ·   ${esc(code)}</div><button class="btn sky sm" type="button" id="ucCopy">${esc(tt('uCopy'))}</button>`;
+  $('ucCopy').onclick = async () => { try { await navigator.clipboard.writeText(`${name}\n${code}`); toast(tt('uCopied')); } catch (_) { window.prompt(tt('uCopy'), `${name} ${code}`); } };
+}
+function openUserForm() {
+  const f = $('userForm'); f.classList.toggle('hidden'); if (f.classList.contains('hidden')) return;
+  f.innerHTML = `<div class="urow"><input id="uName" maxlength="30" autocomplete="off" placeholder="${esc(tt('uName'))}"><input id="uCodeIn" maxlength="64" autocomplete="off" dir="ltr" placeholder="${esc(tt('uCode'))}"><button class="btn sky sm" id="uGen" type="button">${esc(tt('uGen'))}</button><button class="btn gold sm" id="uCreate" type="button">${esc(tt('uCreate'))}</button></div><p class="note">${esc(tt('uHint'))}</p>`;
+  $('uCodeIn').value = genCode(); $('uGen').onclick = () => { $('uCodeIn').value = genCode(); };
+  $('uCreate').onclick = async () => { const name = $('uName').value.trim(), code = $('uCodeIn').value.trim(); try { await usersCall('admin_create_app_user', { p_username: name, p_code: code }); f.classList.add('hidden'); showUserCode(name, code); await refreshUsers(); } catch (e) { toast(userError(e)); } };
+}
+
+// ------------------------------------------------------------------ merge two accounts (the second one is absorbed into the first one you choose)
+function closeMerge() { $('mergeModal').classList.add('hidden'); }
+function openMerge(u) {
+  const others = state.users.filter((x) => x.id !== u.id);
+  if (!others.length) { toast(tt('mergeNone')); return; }
+  const count = (name) => [...state.rows.values()].filter((r) => r.reported_by === name).length;
+  $('mergeTitle').textContent = tt('mergeTitle', { n: u.username });
+  $('mergeInfo').textContent = tt('mergeInfo', { n: u.username });
+  const sel = $('mergeTarget');
+  sel.innerHTML = others.map((x) => `<option value="${esc(x.id)}">${esc(x.username)} (${esc(tt('mergeReports', { n: count(x.username) }))})</option>`).join('');
+  $('mergeCount').textContent = tt('mergeReports', { n: count(u.username) });
+  $('mergeModal').classList.remove('hidden');
+  $('mergeGo').disabled = false;
+  $('mergeGo').onclick = async () => {
+    const keep = others.find((x) => x.id === sel.value); if (!keep) return;
+    if (!window.confirm(tt('mergeConfirm', { a: u.username, k: keep.username }))) return;
+    $('mergeGo').disabled = true;
+    try {
+      const r = await usersCall('admin_merge_app_users', { p_keep: keep.id, p_absorb: u.id });
+      closeMerge(); toast(tt('mergeDone', { n: (r && r.reports) != null ? r.reports : 0, k: keep.username }));
+      if (!DEMO) await load(); else render();
+      await refreshUsers();
+    } catch (e) { console.error(e); toast(rpcMissing(e) ? tt('mergeNoRpc') : tt('actionErr')); $('mergeGo').disabled = false; }
   };
-  if (shown) {
-    const box = document.createElement('div'); box.className = 'ucode';
-    box.innerHTML = '<p></p><div class="big" dir="ltr"></div><button class="btn2" type="button"></button>';
-    box.querySelector('p').textContent = t('uCodeShown');
-    box.querySelector('.big').textContent = `${shown.name}   ·   ${shown.code}`;
-    const cb = box.querySelector('button'); cb.textContent = t('uCopy');
-    cb.onclick = async () => { try { await navigator.clipboard.writeText(`${shown.name}\n${shown.code}`); toast(t('uCopied')); } catch (_) { window.prompt(t('uCopy'), `${shown.name} ${shown.code}`); } };
-    body.appendChild(box);
-  }
-  let list = [];
-  try { list = await usersList(); } catch (e) { toast(userError(e)); }
-  const wrap = document.createElement('div'); wrap.className = 'ulist';
-  if (!list.length) wrap.innerHTML = `<div class="empty">${t('uNone')}</div>`;
-  for (const u of list) {
-    const row = document.createElement('div'); row.className = 'uitem';
-    const st = u.status === 'active' ? t('uActive') : u.status === 'revoked' ? t('uRevoked') : t('uWaiting');
-    row.innerHTML = `<div class="un"><b></b><span class="ubadge ${u.status}"></span></div><div class="um"></div><div class="ua"></div>`;
-    row.querySelector('b').textContent = u.username; row.querySelector('.ubadge').textContent = st;
-    row.querySelector('.um').textContent = `${u.reports} ${t('uReports')}${u.last_seen_at ? ' · ' + t('uLast') + ': ' + fmtTime(u.last_seen_at) : ''}`;
-    const act = row.querySelector('.ua');
-    const btn = (label, fn, cls) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn2 ' + (cls || ''); b.textContent = label; b.onclick = fn; act.appendChild(b); };
-    btn(t('uReset'), async () => { if (!window.confirm(t('uConfirmReset'))) return; const code = genCode(); try { await usersCall('admin_reset_app_user', { p_id: u.id, p_code: code }); showCode(u.username, code); } catch (e) { toast(userError(e)); } });
-    if (u.status !== 'revoked') btn(t('uRevoke'), async () => { if (!window.confirm(t('uConfirmRevoke'))) return; try { await usersCall('admin_revoke_app_user', { p_id: u.id }); renderUsers(null); } catch (e) { toast(userError(e)); } });
-    btn(t('uDelete'), async () => { if (!window.confirm(t('uConfirmDelete'))) return; try { await usersCall('admin_delete_app_user', { p_id: u.id }); renderUsers(null); } catch (e) { toast(userError(e)); } }, 'warn');
-    wrap.appendChild(row);
-  }
-  body.appendChild(wrap);
 }
 
-// ------------------------------------------------------------------ boot
-// the category row can be wider than the screen: the mouse wheel and click-and-drag scroll it sideways (touch screens swipe natively)
-function enableBarScroll(el) {
-  if (el._barScroll) return; el._barScroll = true;
-  el.addEventListener('wheel', (e) => {
-    if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && el.scrollWidth > el.clientWidth) { el.scrollBy({ left: (getComputedStyle(el).direction === 'rtl' ? -1 : 1) * e.deltaY }); e.preventDefault(); }
-  }, { passive: false });
-  let down = null, moved = false;
-  el.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse') { down = { x: e.clientX, left: el.scrollLeft }; moved = false; } });
-  window.addEventListener('pointermove', (e) => { if (!down) return; const dx = e.clientX - down.x; if (Math.abs(dx) > 5) moved = true; if (moved) el.scrollLeft = down.left - dx; });
-  window.addEventListener('pointerup', () => { down = null; });
-  el.addEventListener('click', (e) => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+// ------------------------------------------------------------------ notes to volunteers (one person or everybody; each phone shows a note once)
+let demoNotes = [
+  { id: 'n1', target: 'Ahmad', body: 'اليوم أنت في شارع القوتلي، من الدوار حتى المدرسة.', created_at: new Date(Date.now() - 3 * 3600e3).toISOString(), expires_at: new Date(Date.now() + 14 * 864e5).toISOString(), read_count: 1, audience: 1 },
+  { id: 'n2', target: null, body: 'انتبهوا: الشارع المقابل للسوق مغلق للصيانة اليوم.', created_at: new Date(Date.now() - 20 * 3600e3).toISOString(), expires_at: new Date(Date.now() + 14 * 864e5).toISOString(), read_count: 2, audience: 3 },
+  { id: 'n3', target: 'Rana', body: 'ركّزي على الأعمدة الكهربائية قرب الحديقة.', created_at: new Date(Date.now() - 600e3).toISOString(), expires_at: new Date(Date.now() + 14 * 864e5).toISOString(), read_count: 0, audience: 1 },
+];
+async function notesCall(fn, args) {
+  if (DEMO) {
+    if (fn === 'admin_send_note') { demoNotes.unshift({ id: 'n' + Date.now(), target: args.p_target || null, body: args.p_body, created_at: new Date().toISOString(), expires_at: new Date(Date.now() + 14 * 864e5).toISOString(), read_count: 0, audience: args.p_target ? 1 : state.users.filter((u) => u.status === 'active').length }); return null; }
+    if (fn === 'admin_list_notes') return demoNotes;
+    if (fn === 'admin_delete_note') { demoNotes = demoNotes.filter((n) => n.id !== args.p_id); return null; }
+  }
+  const { data, error } = await sb.rpc(fn, args || {}); if (error) throw error; return data;
+}
+function closeNote() { $('noteModal').classList.add('hidden'); }
+function openNote(target) {
+  const m = $('noteModal'), ta = $('noteText');
+  $('noteTitle').textContent = target ? tt('noteToOne', { n: target }) : tt('noteToAll');
+  $('noteHint').textContent = (target ? tt('noteHintOne') : tt('noteHintAll')) + ' ' + tt('noteOnlyActive') + '.';
+  ta.value = ''; ta.placeholder = tt('notePh');
+  const left = () => { $('noteLeft').textContent = tt('noteLeft', { n: 600 - ta.value.length }); };
+  ta.oninput = left; left();
+  m.classList.remove('hidden'); setTimeout(() => ta.focus(), 50);
+  $('noteSendBtn').disabled = false;
+  $('noteSendBtn').onclick = async () => {
+    const body = ta.value.trim(); if (!body) { toast(tt('noteEmpty')); return; }
+    $('noteSendBtn').disabled = true;
+    try { await notesCall('admin_send_note', { p_target: target || null, p_body: body }); closeNote(); toast(tt('noteSent')); renderNotes(); }
+    catch (e) { console.error(e); toast(rpcMissing(e) ? tt('noteNoRpc') : tt('actionErr')); $('noteSendBtn').disabled = false; }
+  };
+}
+async function renderNotes() {
+  const el = $('noteList'); let list;
+  try { list = await notesCall('admin_list_notes'); } catch (e) { console.error(e); el.className = ''; el.innerHTML = `<div class="empty">${esc(tt('noteNoRpc'))}</div>`; return; }
+  if (!list || !list.length) { el.className = ''; el.innerHTML = `<div class="empty">${esc(tt('noteNone'))}</div>`; return; }
+  el.className = 'notes'; el.innerHTML = '';
+  list.forEach((n) => {
+    const all = !n.target, read = Number(n.read_count) || 0, aud = Number(n.audience) || 0;
+    const status = all ? tt('noteReadN', { a: read, b: aud }) : read ? tt('noteRead') : tt('noteWaiting'), ok = all ? read > 0 && read >= aud : read > 0;
+    const row = document.createElement('div'); row.className = 'nrow';
+    row.innerHTML = `<span class="who${all ? ' all' : ''}">${esc(all ? tt('noteEveryone') : n.target)}</span><div class="body">${esc(n.body)}<small>${esc(fmtTime(n.created_at))}</small></div><span class="ds${ok ? ' ok' : ''}">${esc(status)}</span>`;
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = tt('noteDelete');
+    b.onclick = async () => { if (!window.confirm(tt('noteDeleteConfirm'))) return; try { await notesCall('admin_delete_note', { p_id: n.id }); renderNotes(); } catch (_) { toast(tt('actionErr')); } };
+    row.appendChild(b); el.appendChild(row);
+  });
 }
 
+// ------------------------------------------------------------------ settings + Telegram page
+async function tgCall(fn, args) {
+  if (DEMO) {
+    if (fn === 'admin_tg_list') return demoTg;
+    if (fn === 'admin_tg_invite') return 'demo' + genCode().toLowerCase();
+    if (fn === 'admin_tg_remove') { demoTg = demoTg.filter((x) => x.chat_id !== args.p_chat_id); return null; }
+    if (fn === 'admin_tg_open_join') return !!state.openJoin;
+  }
+  const { data, error } = await sb.rpc(fn, args || {}); if (error) throw error; return data;
+}
+async function renderSettings() {
+  $('aboutVer').textContent = tt('versionLine', { v: VERSION });
+  $('mapsList').innerHTML = PRU_MAPS.map((m) => `<span class="chip ${m.id === state.layerId ? 'on' : ''}">${esc(tt(m.key))}${m.google && !googleAvailable(CFG) ? ' · ' + esc(tt('googleNeedsKey')) : ''}</span>`).join('');
+  $('tgWhat').innerHTML = ['tgW1', 'tgW2', 'tgW3'].map((k) => `<li>${esc(tt(k))}</li>`).join('');
+  let list = null;
+  try { list = await tgCall('admin_tg_list'); state.tg = list; } catch (e) { console.error(e); state.tg = null; }
+  $('tgCard').innerHTML = `<div class="tgico"><svg viewBox="0 0 24 24"><path d="M21 4L3 11l6 2 2 6 3-4 5 4z"/></svg></div><div style="flex:1;min-width:200px"><div style="font-weight:900;font-size:20px">PRU · <a style="color:var(--sky)" dir="ltr" target="_blank" rel="noopener" href="https://t.me/${esc(BOT)}">@${esc(BOT)}</a></div><div class="note" style="margin:2px 0 0">${esc(list ? tt('tgDesc') : tt('tgNoRpc'))}</div></div>${list ? `<span class="chip tg">${esc(tt('tgConnected'))}</span>` : ''}`;
+  const el = $('tgList');
+  if (!list) el.innerHTML = `<div class="empty">${esc(tt('tgNoRpc'))}</div>`;
+  else if (!list.length) el.innerHTML = `<div class="empty">${esc(tt('tgNone'))}</div>`;
+  else {
+    el.innerHTML = '';
+    list.forEach((a) => {
+      const d = document.createElement('div'); d.className = 'arow';
+      d.innerHTML = `<span class="av">${esc((a.name || '?')[0])}</span><span style="flex:1">${esc(a.name || '—')}<small>${a.username ? '@' + esc(a.username) : ''} · ${esc(fmtTime(a.joined_at))}</small></span><button class="chip f" type="button" style="border-color:var(--bad);color:#ff9a9d">${esc(tt('tgRemove'))}</button>`;
+      d.querySelector('button').onclick = async () => { if (!window.confirm(tt('tgRemoveConfirm'))) return; try { await tgCall('admin_tg_remove', { p_chat_id: a.chat_id }); await renderSettings(); } catch (e) { toast(tt('actionErr')); } };
+      el.appendChild(d);
+    });
+  }
+  const chipEl = $('tgChip'); if (list) { chipEl.textContent = `✈ ${list.length}`; chipEl.classList.remove('hidden'); } else chipEl.classList.add('hidden');
+  try { state.openJoin = await tgCall('admin_tg_open_join'); $('openToggle').checked = !!state.openJoin; } catch (_) { /* old database */ }
+}
+async function makeInvite() {
+  try {
+    const code = await tgCall('admin_tg_invite');
+    const link = `https://t.me/${BOT}?start=${code}`, o = $('tgInviteOut'); o.classList.remove('hidden');
+    o.innerHTML = `<b>${esc(tt('tgInviteLink'))}</b><code>${esc(link)}</code><p class="note">${esc(tt('tgInviteHint'))}</p><button class="btn sky sm" id="invCopy" type="button">${esc(tt('uCopy'))}</button>`;
+    $('invCopy').onclick = async () => { try { await navigator.clipboard.writeText(link); toast(tt('uCopied')); } catch (_) { window.prompt(tt('uCopy'), link); } };
+  } catch (e) { console.error(e); toast(tt('tgNoRpc')); }
+}
+
+// ------------------------------------------------------------------ router + boot
+const VIEWS = ['map', 'users', 'settings'];
+function route() {
+  let v = (location.hash.match(/#\/(\w+)/) || [])[1]; if (!VIEWS.includes(v)) v = 'map';
+  if ((v === 'users' || v === 'settings') && !state.admin) v = 'map';
+  VIEWS.forEach((n) => $('view-' + n).classList.toggle('hidden', n !== v));
+  document.querySelectorAll('.tabs a, .bar a').forEach((a) => a.classList.toggle('on', a.dataset.view === v));
+  if (v === 'map' && map) setTimeout(() => map.invalidateSize(), 60);
+  if (v === 'users') refreshUsers();
+  if (v === 'settings') renderSettings();
+}
+function buildBar() {
+  const items = [['map', 'M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14', 'navMap'], ['users', 'M2 20c0-3.5 3-5.5 7-5.5s7 2 7 5.5M9 4.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z', 'navUsers'], ['settings', 'M21 4L3 11l6 2 2 6 3-4 5 4z', 'navSettings']];
+  $('bar').innerHTML = items.filter(([v]) => v === 'map' || state.admin).map(([v, p, k]) => `<a href="#/${v}" data-view="${v}"><svg viewBox="0 0 24 24"><path d="${p}"/></svg><span>${esc(tt(k).split(' ')[0])}</span></a>`).join('');
+}
+async function checkAdmin() {
+  if (DEMO) state.admin = true;
+  else { try { const { data } = await sb.rpc('is_admin'); state.admin = data === true; } catch (_) { state.admin = false; } }
+  $('tabUsers').classList.toggle('hidden', !state.admin); $('tabSet').classList.toggle('hidden', !state.admin);
+  buildBar();
+}
 async function startApp() {
-  enableBarScroll($('counts'));
   $('login').classList.add('hidden'); $('app').classList.remove('hidden');
   $('demoTag').classList.toggle('hidden', !DEMO);
-  if (!map) initMap();
-  setTimeout(() => map.invalidateSize(), 50);
+  if (!map) { initMap(); initRuler(); }
+  setTimeout(() => map.invalidateSize(), 60);
   state.rows.clear(); state.fitted = false;
-  await load(); render(); subscribe(); checkAdmin();
+  await checkAdmin(); await load(); await loadUsers(); render(); subscribe(); route();
+  loadPresence(); setInterval(() => { if (!$('view-map').classList.contains('hidden')) loadPresence(); }, 20000);
+  setInterval(() => { renderFeed(); }, 60000);
+  if (state.admin) renderSettings();
 }
 function showLogin() { $('app').classList.add('hidden'); $('login').classList.remove('hidden'); }
-
+async function refreshAll() {
+  $('btnRefresh').disabled = true;
+  try { state.rows.clear(); await load(); await loadUsers(); await loadPresence(); render(); toast(tt('refreshed')); } finally { $('btnRefresh').disabled = false; }
+}
 async function main() {
-  applyLang();
-  document.querySelectorAll('[data-lang]').forEach((b) => b.addEventListener('click', () => { lang = b.dataset.lang; try { localStorage.setItem('rs_lang', lang); } catch (_) {} applyLang(); if (map) { render(); if (state.selected) openDetail(state.selected, true); } }));
-  $('btnExport').onclick = exportCsv;
-  $('btnUsers').onclick = openUsers; $('usersClose').onclick = closeUsers; $('usersModal').addEventListener('click', (e) => { if (e.target.id === 'usersModal') closeUsers(); });
-  $('btnFilters').onclick = () => $('panel').classList.toggle('showfilters');
+  applyLang(); renderLayerPop && 0;
+  document.querySelectorAll('[data-lang]').forEach((b) => b.addEventListener('click', () => { lang = b.dataset.lang; try { localStorage.setItem('pru_lang', lang); } catch (_) {} applyLang(); if (map) { renderLayerPop(); $('layerName').textContent = tt((PRU_MAPS.find((m) => m.id === state.layerId) || PRU_MAPS[0]).key); render(); buildBar(); route(); if (state.selected) openDetail(state.selected, true); } }));
+  $('btnRefresh').onclick = refreshAll;
+  $('btnRuler').onclick = () => { state.ruler.on ? rulerStop(false) : rulerStart(); };
+  $('rulerCancel').onclick = () => rulerStop(false);
+  $('btnFilters').onclick = () => $('rail').classList.toggle('open');
+  $('railClose').onclick = () => $('rail').classList.remove('open');
+  $('btnLayers').onclick = (e) => { e.stopPropagation(); $('layerPop').classList.toggle('hidden'); };
+  document.addEventListener('click', (e) => { if (!e.target.closest('.mapsw')) $('layerPop').classList.add('hidden'); });
+  $('selVol').onchange = (e) => { state.vol = e.target.value; render(); fitVisible(); };
+  $('liveToggle').onchange = drawVolunteers;
+  document.querySelectorAll('.stabs button').forEach((b) => b.onclick = () => { state.side = b.dataset.st; document.querySelectorAll('.stabs button').forEach((x) => x.classList.toggle('on', x === b)); $('feed').classList.toggle('hidden', b.dataset.st !== 'feed'); $('list').classList.toggle('hidden', b.dataset.st !== 'list'); });
+  $('side').addEventListener('click', (e) => { if (e.target.id === 'dBack' || e.target.id === 'xBack') $('side').classList.remove('full'); });
+  $('btnNewUser').onclick = openUserForm;
+  $('btnNoteAll').onclick = () => openNote(null);
+  $('btnVolNote').onclick = () => { const u = state.users.find((x) => String(x.username).toLowerCase() === String(state.vol).toLowerCase()); if (u) openNote(u.username); };
+  $('noteCancel').onclick = closeNote;
+  $('mergeCancel').onclick = closeMerge;
+  $('mergeModal').addEventListener('click', (e) => { if (e.target.id === 'mergeModal') closeMerge(); });
+  $('noteModal').addEventListener('click', (e) => { if (e.target.id === 'noteModal') closeNote(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!$('noteModal').classList.contains('hidden')) closeNote(); if (!$('mergeModal').classList.contains('hidden')) closeMerge(); } });
+  $('btnInvite').onclick = makeInvite;
+  $('openToggle').onchange = async (e) => { try { state.openJoin = await tgCall('admin_tg_open_join', { p_open: e.target.checked }); e.target.checked = !!state.openJoin; if (DEMO) { state.openJoin = e.target.checked; } toast(tt('saved')); } catch (_) { e.target.checked = !e.target.checked; toast(tt('tgNoRpc')); } };
+  window.addEventListener('hashchange', route);
   if (DEMO) { $('btnOut').classList.add('hidden'); await startApp(); return; }
   sb = window.supabase.createClient(CFG.url, CFG.anonKey, { auth: { persistSession: true, autoRefreshToken: true } });
   $('btnOut').onclick = async () => { await sb.auth.signOut(); location.reload(); };
@@ -453,7 +737,7 @@ async function main() {
     e.preventDefault(); $('loginErr').textContent = ''; const btn = e.target.querySelector('button[type=submit]'); btn.disabled = true;
     const { error } = await sb.auth.signInWithPassword({ email: $('email').value.trim(), password: $('password').value });
     btn.disabled = false;
-    if (error) { $('loginErr').textContent = t('errLogin'); return; }
+    if (error) { $('loginErr').textContent = tt('errLogin'); return; }
     startApp();
   });
   const { data } = await sb.auth.getSession();

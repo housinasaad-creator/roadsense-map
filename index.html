@@ -7,66 +7,136 @@
 <meta name="supported-color-schemes" content="light">
 <meta name="darkreader-lock">
 <meta name="robots" content="noindex, nofollow">
-<title>خريطة الطرق</title>
-<link rel="icon" href="assets/logo.png">
+<title>PRU · سما تدمر</title>
+<link rel="icon" href="assets/mark.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css">
-<link rel="stylesheet" href="style.css?v=9">
+<link rel="stylesheet" href="style.css?v=pru3">
 </head>
 <body>
 
 <!-- sign in -->
 <section id="login" class="login hidden">
-  <form id="loginForm" class="card" autocomplete="on">
-    <img class="logo" src="assets/logo.png" alt="">
-    <h1 data-i="appTitle"></h1>
+  <form id="loginForm" class="lcard" autocomplete="on">
+    <img class="llogo" src="assets/logo.png" alt="Sama Tadmor">
+    <div class="lpru">PRU</div>
     <p class="sub" data-i="loginSub"></p>
     <label><span data-i="email"></span><input id="email" type="email" autocomplete="username" required></label>
     <label><span data-i="password"></span><input id="password" type="password" autocomplete="current-password" required></label>
-    <button class="btn primary" type="submit" data-i="signIn"></button>
+    <button class="btn gold" type="submit" data-i="signIn"></button>
     <p id="loginErr" class="err" role="alert"></p>
     <div class="langs"><button type="button" data-lang="ar">العربية</button><button type="button" data-lang="tr">Türkçe</button><button type="button" data-lang="en">English</button></div>
   </form>
 </section>
 
 <!-- dashboard -->
-<main id="app" class="app hidden">
-  <header class="bar">
-    <div class="brand"><img src="assets/logo.png" alt=""><b data-i="appTitle"></b><span id="demoTag" class="demo hidden" data-i="demo"></span></div>
-    <div class="counts" id="counts"></div>
-    <div class="actions">
-      <button class="icon" id="btnFilters" title="" aria-label="filters">☰</button>
-      <button class="icon hidden" id="btnUsers" data-i-title="usersTitle">👥</button>
-      <button class="icon" id="btnExport" data-i-title="export">⤓</button>
-      <div class="langs small"><button data-lang="ar">ع</button><button data-lang="tr">TR</button><button data-lang="en">EN</button></div>
-      <button class="icon" id="btnOut" data-i-title="signOut">⎋</button>
+<div id="app" class="app hidden">
+  <header class="top">
+    <a class="brand" href="#/map"><img src="assets/mark.png" alt=""><span class="pru">PRU</span><small data-i="brandSub"></small><span id="demoTag" class="demo hidden" data-i="demo"></span></a>
+    <nav class="tabs" id="tabs">
+      <a href="#/map" data-view="map"><svg viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/></svg><span data-i="navMap"></span></a>
+      <a href="#/users" data-view="users" id="tabUsers" class="hidden"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-5.5 7-5.5s7 2 7 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5c2.5.6 4 2.3 4 5"/></svg><span data-i="navUsers"></span></a>
+      <a href="#/settings" data-view="settings" id="tabSet" class="hidden"><svg viewBox="0 0 24 24"><path d="M21 4L3 11l6 2 2 6 3-4 5 4z"/></svg><span data-i="navSettings"></span></a>
+    </nav>
+    <div class="topr">
+      <span id="tgChip" class="chip tg hidden"></span>
+      <div class="langs small"><button data-lang="ar">AR</button><button data-lang="tr">TR</button><button data-lang="en">EN</button></div>
+      <button class="ib" id="btnOut" data-i-title="signOut"><svg viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg></button>
     </div>
   </header>
 
-  <div class="main">
-    <div id="map" aria-label="map"></div>
-
-    <aside id="panel" class="panel">
-      <div id="filters" class="filters">
+  <main class="views">
+    <!-- ============ MAP ============ -->
+    <section id="view-map" class="view map">
+      <aside id="rail" class="rail">
+        <div class="rhead"><b data-i="filters"></b><button class="ib x" id="railClose" type="button">✕</button></div>
+        <div class="grp"><div class="gt" data-i="fVolunteer"></div><div class="vsel"><select id="selVol" class="sel"></select><button id="btnVolNote" class="mini hidden" type="button"></button></div></div>
         <div class="grp"><div class="gt" data-i="fType"></div><div class="chips" id="chipType"></div></div>
         <div class="grp"><div class="gt" data-i="fStatus"></div><div class="chips" id="chipStatus"></div></div>
         <div class="grp"><div class="gt" data-i="fPeriod"></div><div class="chips" id="chipPeriod"></div></div>
+        <label class="live" id="liveRow"><span><b data-i="liveShow"></b><small data-i="liveHint"></small></span><input id="liveToggle" type="checkbox" checked><i class="sw"></i></label>
+      </aside>
+
+      <div class="mapwrap">
+        <div id="map" aria-label="map"></div>
+        <div class="kpis" id="kpis"></div>
+        <div class="tools tl">
+          <button class="tb" id="btnRefresh" type="button"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg><span data-i="refresh"></span></button>
+          <button class="tb" id="btnRuler" type="button"><svg viewBox="0 0 24 24"><path d="M3 17L17 3l4 4L7 21zM7 13l2 2M10 10l2 2M13 7l2 2"/></svg><span data-i="ruler"></span></button>
+          <button class="tb" id="btnFilters" type="button"><svg viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4-2v-4z"/></svg><span data-i="filters"></span></button>
+        </div>
+        <div class="tools tr">
+          <div class="mapsw">
+            <button class="tb" id="btnLayers" type="button"><svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5"/></svg><span id="layerName"></span></button>
+            <div class="pop hidden" id="layerPop"></div>
+          </div>
+        </div>
+        <div class="rulerbar hidden" id="rulerBar"><span data-i="rulerHint"></span><button class="tb" id="rulerCancel" type="button" data-i="cancel"></button></div>
       </div>
-      <div id="listHead" class="lh"><b data-i="latest"></b><span id="listCount"></span></div>
-      <div id="list" class="list"></div>
-      <div id="detail" class="detail hidden"></div>
-    </aside>
+
+      <aside id="side" class="side">
+        <div class="stabs"><button data-st="feed" class="on" data-i="feed"></button><button data-st="list" data-i="reports"></button><span class="cnt" id="listCount"></span></div>
+        <div id="feed" class="feed"></div>
+        <div id="list" class="list hidden"></div>
+        <div id="detail" class="detail hidden"></div>
+        <div id="exportPanel" class="detail hidden"></div>
+      </aside>
+    </section>
+
+    <!-- ============ VOLUNTEERS ============ -->
+    <section id="view-users" class="view page hidden">
+      <div class="phead"><h1 data-i="navUsers"></h1><button class="btn sky sm" id="btnNoteAll" type="button" data-i="noteAll"></button><button class="btn gold sm" id="btnNewUser" type="button" data-i="newUser"></button></div>
+      <div class="kcards" id="userKpis"></div>
+      <div id="userForm" class="card uform hidden"></div>
+      <div id="userCode" class="card ucode hidden"></div>
+      <div class="card tablecard"><div class="tscroll"><table class="tbl" id="userTable"></table></div></div>
+      <div class="card" id="notesCard"><h3 data-i="notesSent"></h3><div id="noteList"></div></div>
+      <p class="note" data-i="usersNote"></p>
+    </section>
+
+    <!-- ============ SETTINGS + TELEGRAM ============ -->
+    <section id="view-settings" class="view page hidden">
+      <div class="phead"><h1 data-i="navSettings"></h1></div>
+      <div class="card tgcard" id="tgCard"></div>
+      <div class="two">
+        <div class="card"><h3 data-i="tgAdmins"></h3><div id="tgList"></div><button class="btn sky" id="btnInvite" type="button" data-i="tgInvite"></button><div id="tgInviteOut" class="invout hidden"></div></div>
+        <div class="card"><h3 data-i="tgWhat"></h3><ul class="what" id="tgWhat"></ul>
+          <label class="live" id="openRow"><span><b data-i="tgOpen"></b><small data-i="tgOpenHint"></small></span><input id="openToggle" type="checkbox"><i class="sw"></i></label></div>
+      </div>
+      <div class="card"><h3 data-i="mapsTitle"></h3><p class="note" data-i="mapsNote"></p><div id="mapsList" class="mapslist"></div></div>
+      <div class="card about"><img src="assets/logo.png" alt=""><div><b>PRU · Sama Tadmor</b><p class="note" id="aboutVer"></p></div></div>
+    </section>
+  </main>
+
+  <nav class="bar" id="bar"></nav>
+  <div id="noteModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="mcard">
+      <h3 id="noteTitle"></h3>
+      <p class="note" id="noteHint"></p>
+      <textarea id="noteText" maxlength="600" rows="5"></textarea>
+      <div class="mfoot"><small id="noteLeft"></small><span style="flex:1"></span><button class="btn grey sm" id="noteCancel" type="button" data-i="noteCancel"></button><button class="btn gold sm" id="noteSendBtn" type="button" data-i="noteSend"></button></div>
+    </div>
+  </div>
+  <div id="mergeModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="mcard">
+      <h3 id="mergeTitle"></h3>
+      <p class="note" id="mergeInfo"></p>
+      <div class="gt" data-i="mergeInto"></div>
+      <select id="mergeTarget" class="sel"></select>
+      <div class="mfoot"><small id="mergeCount"></small><span style="flex:1"></span><button class="btn grey sm" id="mergeCancel" type="button" data-i="noteCancel"></button><button class="btn danger sm" id="mergeGo" type="button" data-i="mergeDo"></button></div>
+    </div>
   </div>
   <div id="toast" class="toast hidden"></div>
-  <div id="usersModal" class="modal hidden"><div class="sheet"><div class="mh"><b data-i="usersTitle"></b><button class="x" id="usersClose" type="button">✕</button></div><div id="usersBody"></div></div></div>
-</main>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=9"></script>
-<script src="demo_points.js?v=9"></script>
-<script src="app.js?v=9"></script>
+<script src="config.js?v=pru3"></script>
+<script src="demo_points.js?v=pru3"></script>
+<script src="i18n.js?v=pru3"></script>
+<script src="maps.js?v=pru3"></script>
+<script src="app.js?v=pru3"></script>
 </body>
 </html>
