@@ -760,8 +760,18 @@ async function main() {
   $('btnRefresh').onclick = refreshAll;
   $('btnRuler').onclick = () => { state.ruler.on ? rulerStop(false) : rulerStart(); };
   $('rulerCancel').onclick = () => rulerStop(false);
-  $('btnFilters').onclick = () => $('rail').classList.toggle('open');
-  $('railClose').onclick = () => $('rail').classList.remove('open');
+  // wide screens: the filters column sits beside the map, the button hides / shows it; phones: it slides up as a sheet
+  const wideScreen = () => window.matchMedia('(min-width: 901px)').matches;
+  const syncFilterBtn = () => $('btnFilters').classList.toggle('on', wideScreen() ? !$('rail').classList.contains('collapsed') : $('rail').classList.contains('open'));
+  try { if (localStorage.getItem('pru_rail') === '0') $('rail').classList.add('collapsed'); } catch (_) {}
+  $('btnFilters').onclick = () => {
+    const r = $('rail');
+    if (wideScreen()) { r.classList.toggle('collapsed'); try { localStorage.setItem('pru_rail', r.classList.contains('collapsed') ? '0' : '1'); } catch (_) {} setTimeout(() => { if (map) map.invalidateSize(); }, 60); }
+    else r.classList.toggle('open');
+    syncFilterBtn();
+  };
+  $('railClose').onclick = () => { $('rail').classList.remove('open'); syncFilterBtn(); };
+  window.addEventListener('resize', syncFilterBtn); syncFilterBtn();
   $('btnLayers').onclick = (e) => { e.stopPropagation(); $('layerPop').classList.toggle('hidden'); };
   document.addEventListener('click', (e) => { if (!e.target.closest('.mapsw')) $('layerPop').classList.add('hidden'); });
   $('selVol').onchange = (e) => { state.vol = e.target.value; render(); fitVisible(); };

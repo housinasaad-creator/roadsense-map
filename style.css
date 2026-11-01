@@ -183,6 +183,7 @@ textarea { width: 100%; min-height: 70px; border-radius: 12px; background: rgba(
 .invout { margin-top: 12px; padding: 12px; border-radius: 14px; background: rgba(0,0,0,.25); border: 1px dashed var(--gold); } .invout code { display: block; direction: ltr; text-align: start; word-break: break-all; color: var(--gold); font-weight: 800; margin: 6px 0; }
 .mapslist { display: flex; flex-wrap: wrap; gap: 8px; } .about { display: flex; align-items: center; gap: 14px; } .about img { height: 74px; }
 
+@media (min-width: 901px) { .rail.collapsed { display: none; } }
 /* ---------------------------------------------------------------- phone and small screens */
 @media (max-width: 900px) {
   :root { --top: 54px; --bar: 62px; }
