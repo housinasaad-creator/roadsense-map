@@ -180,7 +180,7 @@ function drawVolunteers() {
   const byName = new Map(state.users.map((u) => [String(u.username).toLowerCase(), u]));
   state.presence.filter((p) => p.sharing && p.lat != null && p.lon != null).forEach((p) => {
     const live = (Date.now() - new Date(p.updated_at).getTime()) < 3 * 60e3, name = p.username, u = byName.get(String(name).toLowerCase());
-    const html = `<div class="vol${live ? '' : ' stale'}"><div class="ring"></div><div class="dot">${esc(name[0] || '?')}</div><div class="lbl">${esc(name)} · ${esc(agoText(p.updated_at))}</div></div>`;
+    const html = `<div class="vol${live ? '' : ' stale'}"><div class="ring"></div><div class="dot">${esc(name[0] || '?')}</div><div class="lbl"><b>${esc(name)}</b><small>${esc(agoText(p.updated_at))}</small></div></div>`;
     const m = L.marker([p.lat, p.lon], { icon: L.divIcon({ className: '', html, iconSize: [0, 0] }), zIndexOffset: 800 });
     m.bindTooltip(`${esc(name)}${p.accuracy_m ? ' · ±' + Math.round(p.accuracy_m) + ' ' + tt('m') : ''}${u && u.app_version ? ' · v' + esc(u.app_version) : ''}`, { className: 'pruTip', direction: 'top', offset: [0, -22] });
     m.on('click', (e) => { L.DomEvent.stopPropagation(e); volPopup(m, name, p); });
