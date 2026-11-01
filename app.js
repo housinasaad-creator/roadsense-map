@@ -272,7 +272,7 @@ function renderFilters() {
 }
 
 // ------------------------------------------------------------------ detail
-function closeDetail() { state.selected = null; $('detail').classList.add('hidden'); document.querySelectorAll('.fi.sel').forEach((e) => e.classList.remove('sel')); markers.forEach((m, id) => m.setIcon(pointIcon(state.rows.get(id)))); }
+function closeDetail() { state.selected = null; $('detail').classList.add('hidden'); document.querySelectorAll('.fi.sel').forEach((e) => e.classList.remove('sel')); markers.forEach((m, id) => { const row = state.rows.get(id); if (row) m.setIcon(pointIcon(row)); }); }
 function demoPhoto(r, clean) {
   const c = COLORS[r.type] || '#888';
   return 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#2c4b78"/><rect y="130" width="400" height="170" fill="#4a5568"/><polygon points="200,130 30,300 370,300" fill="#5b6577"/><ellipse cx="190" cy="235" rx="62" ry="20" fill="#0c0f14"/>${clean ? '' : `<rect x="105" y="195" width="170" height="66" rx="8" fill="none" stroke="${c}" stroke-width="5"/>`}<text x="12" y="288" font-size="15" fill="#fff" opacity=".85" font-family="sans-serif">DEMO</text></svg>`);
