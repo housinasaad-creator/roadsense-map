@@ -473,31 +473,73 @@ function openExport(bounds) {
   $('xBack').onclick = () => { p.classList.add('hidden'); if (rulerRect) { map.removeLayer(rulerRect); rulerRect = null; } };
   $('xGo').onclick = () => makeReport(rows, bounds, { names: $('xNames').checked, photos: $('xPhotos').checked, coords: $('xCoords').checked });
 }
+// Builds the report as a real PDF file in the browser (no print window, no other page): every page is drawn as HTML (so Arabic, Turkish and English
+// are shaped by the browser), turned into a picture with html2canvas and put into an A4 PDF with jsPDF, which the browser then downloads at once.
+// The language of the file is the language chosen in the panel; the logo and the PRU colours are on every page.
 async function makeReport(rows, bounds, opt) {
-  const w = window.open('', '_blank'); if (!w) { toast(tt('actionErr')); return; }
-  const photos = {};
-  if (opt.photos) {
-    if (DEMO) rows.forEach((r) => { photos[r.id] = demoPhoto(r); });
-    else {
-      const paths = rows.map((r) => r.photo_path).filter(Boolean);
-      if (paths.length) { const { data } = await sb.storage.from('report-photos').createSignedUrls(paths, 900); (data || []).forEach((x) => { if (x.signedUrl) photos[x.path] = x.signedUrl; }); }
-      rows.forEach((r) => { if (r.photo_path && photos[r.photo_path]) photos[r.id] = photos[r.photo_path]; });
+  if (!window.html2canvas || !window.jspdf) { toast(tt('actionErr')); return; }
+  const go = $('xGo'); if (go) go.disabled = true;
+  toast(tt('pdfBusy'));
+  try {
+    const urls = {};
+    if (opt.photos) {
+      if (DEMO) rows.forEach((r) => { urls[r.id] = demoPhoto(r); });
+      else {
+        const paths = rows.map((r) => r.photo_path).filter(Boolean);
+        if (paths.length) { const { data } = await sb.storage.from('report-photos').createSignedUrls(paths, 900); (data || []).forEach((x) => { if (x.signedUrl) urls[x.path] = x.signedUrl; }); }
+        rows.forEach((r) => { if (r.photo_path && urls[r.photo_path]) urls[r.id] = urls[r.photo_path]; });
+      }
     }
+    const ok = {}; // pictures that really load (a failing one is simply left out)
+    await Promise.all(rows.map((r) => new Promise((res) => {
+      const u = urls[r.id]; if (!u) return res();
+      const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { ok[r.id] = u; res(); }; im.onerror = () => res(); im.src = u; setTimeout(res, 15000);
+    })));
+    const W = 794, H = 1123, PAD = 36, dir = lang === 'ar' ? 'rtl' : 'ltr', ar = (k, v) => esc(tt(k, v));
+    const cardH = opt.photos ? 150 : 104, gap = 10;
+    const perFirst = Math.max(1, Math.floor((H - PAD * 2 - 250 - 34) / (cardH + gap))), perNext = Math.max(1, Math.floor((H - PAD * 2 - 60 - 34) / (cardH + gap)));
+    const pages = [rows.slice(0, perFirst)];
+    for (let i = perFirst; i < rows.length; i += perNext) pages.push(rows.slice(i, i + perNext));
+    const logo = new URL('assets/logo.png', location.href).href;
+    const today = new Date().toLocaleDateString(lang === 'ar' ? 'ar-SY-u-nu-latn' : lang, { year: 'numeric', month: 'long', day: 'numeric' });
+    const css = `<style>.pp,.pp *{box-sizing:border-box}.pp{font-family:'Segoe UI',Tahoma,Arial,sans-serif;color:#0A1A33;direction:${dir};text-align:start;position:relative}
+      .band{background:#0A1A33;border-radius:16px;padding:14px 18px;display:flex;align-items:center;gap:16px;color:#fff}.band img{height:84px}.band h1{margin:0;font-size:25px;color:#E5CB65;flex:1}.band small{color:#8FA8C8;font-size:13px;display:block;margin-top:4px}
+      .slim{background:#0A1A33;border-radius:12px;padding:8px 14px;display:flex;align-items:center;gap:12px;color:#E5CB65;font-weight:700;font-size:15px}.slim img{height:36px}.slim span{flex:1}
+      .box{background:#EEF3F9;border-radius:12px;padding:9px 13px;margin-top:10px;font-size:13px;line-height:1.7}.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+      .chip{padding:3px 11px;border-radius:99px;font-size:12.5px;font-weight:700;background:#E9F3FC;border:1px solid #9CCDF0;color:#14507C}.chip.g{background:#FBF4D5;border-color:#E5CB65;color:#6B5710}
+      .r{border:1.5px solid #D5DEEA;border-radius:14px;padding:10px 12px;margin-top:10px;overflow:hidden;background:#fff}.rh{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800}.rh i{width:13px;height:13px;border-radius:50%}
+      .rh .d{margin-inline-start:auto;color:#5a6b86;font-size:12px;font-weight:600}.st{font-size:11px;font-weight:800;padding:1px 9px;border-radius:99px;background:#E8EEF6}.st-fixed{background:#CFF5DD}.st-in_progress{background:#F7EBB8}.st-rejected{background:#E2E6EC}
+      .rb{display:flex;gap:12px;margin-top:8px}.rb img,.rb .np{width:176px;height:104px;border-radius:10px;object-fit:cover;flex:none;background:#E8EEF6}.np{display:flex;align-items:center;justify-content:center;color:#7d8da6;font-size:12px}
+      .kv{flex:1;font-size:12.5px;line-height:1.65;min-width:0}.kv u{text-decoration:none;color:#5a6b86;margin-inline-end:6px}.kv .n{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+      .ft{position:absolute;bottom:14px;inset-inline:${PAD}px;display:flex;justify-content:space-between;color:#7d8da6;font-size:11.5px;border-top:2px solid #E5CB65;padding-top:6px}</style>`;
+    const card = (r) => `<div class="r" style="height:${cardH}px"><div class="rh"><i style="background:${COLORS[r.type] || '#888'}"></i>${ar(r.type)}<span class="st st-${r.status}">${ar(r.status)}</span><span class="d">${esc(fmtTime(r.detected_at))}</span></div>
+      <div class="rb">${opt.photos ? (ok[r.id] ? `<img src="${ok[r.id]}" crossorigin="anonymous" alt="">` : `<div class="np">${ar('noPhoto')}</div>`) : ''}<div class="kv">${opt.names ? `<div><u>${ar('reporter')}</u>${esc(r.reported_by || '—')}</div>` : ''}${opt.coords ? `<div><u>${ar('location')}</u><span dir="ltr">${r.lat.toFixed(6)}, ${r.lon.toFixed(6)}</span></div><div><u>${ar('accuracy')}</u>${r.accuracy_m == null ? '—' : '±' + Math.round(r.accuracy_m) + ' ' + ar('m')}</div>` : ''}
+      <div><u>${ar('size')}</u>${esc(sizeText(r))}</div><div><u>${ar('confirmations')}</u>${r.confirmations || 1}</div>${r.note ? `<div class="n"><u>${ar('vnote')}</u>${esc(r.note)}</div>` : ''}</div></div></div>`;
+    const byType = {}, byStatus = {}; rows.forEach((r) => { byType[r.type] = (byType[r.type] || 0) + 1; byStatus[r.status] = (byStatus[r.status] || 0) + 1; });
+    const chips = `<span class="chip g">${ar('rulerFound', { n: rows.length })}</span>` + STATUSES.filter((s) => byStatus[s]).map((s) => `<span class="chip">${ar(s)} ${byStatus[s]}</span>`).join('') + Object.entries(byType).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<span class="chip">${ar(k)} ${n}</span>`).join('');
+    const first = `<div class="band"><img src="${logo}" crossorigin="anonymous" alt=""><div style="flex:1"><h1>${ar('pdfReport')} · PRU</h1><small>${esc(today)} · ${ar('appTitle')}</small></div></div>
+      <div class="box"><b>${ar('pdfArea')}:</b> <span dir="ltr">${bounds.getSouth().toFixed(4)}, ${bounds.getWest().toFixed(4)} → ${bounds.getNorth().toFixed(4)}, ${bounds.getEast().toFixed(4)}</span><br>${activeFilterText().map(esc).join(' · ')}</div><div class="chips">${chips}</div>`;
+    const slim = `<div class="slim"><img src="${logo}" crossorigin="anonymous" alt=""><span>${ar('pdfReport')} · PRU</span><small style="color:#8FA8C8">${esc(today)}</small></div>`;
+    const doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true });
+    for (let p = 0; p < pages.length; p++) {
+      const el = document.createElement('div'); el.className = 'pp';
+      el.style.cssText = `position:fixed;left:-12000px;top:0;width:${W}px;height:${H}px;background:#fff;padding:${PAD}px;overflow:hidden`;
+      el.innerHTML = css + (p === 0 ? first : slim) + (pages[p].length ? pages[p].map(card).join('') : `<p style="margin-top:20px;font-weight:700">${ar('pdfNone')}</p>`) +
+        `<div class="ft"><span>PRU · Sama Tadmor</span><span>${ar('pdfPage', { a: p + 1, b: pages.length })}</span></div>`;
+      document.body.appendChild(el);
+      const canvas = await window.html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false, width: W, height: H });
+      el.remove();
+      if (p > 0) doc.addPage();
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 210, 297);
+    }
+    const day = new Date().toISOString().slice(0, 10);
+    doc.save((lang === 'ar' ? 'تقرير-PRU-' : lang === 'tr' ? 'PRU-rapor-' : 'PRU-report-') + day + '.pdf');
+    toast(tt('pdfDone'));
+  } catch (e) {
+    console.error(e); toast(tt('actionErr'));
+  } finally {
+    if (go) go.disabled = false;
   }
-  const dir = lang === 'ar' ? 'rtl' : 'ltr', ar = (k) => esc(tt(k));
-  const cards = rows.map((r) => `<div class="r"><div class="rh"><i style="background:${COLORS[r.type] || '#888'}"></i><b>${ar(r.type)}</b><span class="st st-${r.status}">${ar(r.status)}</span><span class="d">${esc(fmtTime(r.detected_at))}</span></div>
-    <div class="rb">${photos[r.id] ? `<img src="${photos[r.id]}" alt="">` : ''}<div class="kv">${opt.names ? `<div><u>${ar('reporter')}</u> ${esc(r.reported_by || '—')}</div>` : ''}${opt.coords ? `<div><u>${ar('location')}</u> <span dir="ltr">${r.lat.toFixed(6)}, ${r.lon.toFixed(6)}</span></div><div><u>${ar('accuracy')}</u> ${r.accuracy_m == null ? '—' : '±' + Math.round(r.accuracy_m) + ' ' + ar('m')}</div>` : ''}
-    <div><u>${ar('size')}</u> ${esc(sizeText(r))}</div><div><u>${ar('confirmations')}</u> ${r.confirmations || 1}</div>${r.note ? `<div><u>${ar('vnote')}</u> ${esc(r.note)}</div>` : ''}</div></div></div>`).join('');
-  w.document.write(`<!doctype html><html lang="${lang}" dir="${dir}"><head><meta charset="utf-8"><title>${ar('pdfReport')}</title><style>
-    @page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:'Segoe UI',Tahoma,sans-serif;color:#0A1A33;margin:0}
-    header{display:flex;align-items:center;gap:14px;border-bottom:3px solid #C9A93A;padding-bottom:10px;margin-bottom:12px}header img{height:64px}header h1{font-size:22px;flex:1;margin:0}header small{color:#5a6b86}
-    .f{background:#EEF3F9;border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:13px}.r{border:1px solid #D5DEEA;border-radius:12px;padding:10px;margin-bottom:10px;break-inside:avoid}
-    .rh{display:flex;align-items:center;gap:8px;font-size:15px}.rh i{width:12px;height:12px;border-radius:50%}.rh .d{margin-inline-start:auto;color:#5a6b86;font-size:12px}.st{font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;background:#E8EEF6}
-    .st-fixed{background:#CFF5DD}.st-in_progress{background:#F7EBB8}.rb{display:flex;gap:12px;margin-top:8px}.rb img{width:200px;height:auto;border-radius:8px;align-self:flex-start}.kv{flex:1;font-size:13px;line-height:1.7}.kv u{text-decoration:none;color:#5a6b86;margin-inline-end:6px}
-    </style></head><body><header><img src="${location.origin}${location.pathname.replace(/[^/]*$/, '')}assets/logo.png" alt=""><h1>${ar('pdfReport')} · PRU</h1><small>${esc(new Date().toLocaleDateString(lang === 'ar' ? 'ar-SY-u-nu-latn' : lang))}</small></header>
-    <div class="f"><b>${ar('pdfArea')}:</b> ${bounds.getSouth().toFixed(4)}, ${bounds.getWest().toFixed(4)} → ${bounds.getNorth().toFixed(4)}, ${bounds.getEast().toFixed(4)} · ${esc(tt('rulerFound', { n: rows.length }))}<br>${activeFilterText().map(esc).join(' · ')}</div>
-    ${cards || `<p>${ar('pdfNone')}</p>`}<script>setTimeout(function(){window.print()},900)<\/script></body></html>`);
-  w.document.close();
 }
 function exportCsv() {
   const rows = visibleRows(); const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
