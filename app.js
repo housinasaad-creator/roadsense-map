@@ -295,7 +295,7 @@ function renderFilters() {
 }
 
 // ------------------------------------------------------------------ detail
-function closeDetail() { state.selected = null; $('detail').classList.add('hidden'); document.querySelectorAll('.fi.sel').forEach((e) => e.classList.remove('sel')); markers.forEach((m, id) => { const row = state.rows.get(id); if (row) m.setIcon(pointIcon(row)); }); }
+function closeDetail() { state.selected = null; $('detail').classList.add('hidden'); $('side').classList.remove('full'); document.querySelectorAll('.fi.sel').forEach((e) => e.classList.remove('sel')); markers.forEach((m, id) => { const row = state.rows.get(id); if (row) m.setIcon(pointIcon(row)); }); }
 function demoPhoto(r, clean) {
   const c = COLORS[r.type] || '#888';
   return 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#2c4b78"/><rect y="130" width="400" height="170" fill="#4a5568"/><polygon points="200,130 30,300 370,300" fill="#5b6577"/><ellipse cx="190" cy="235" rx="62" ry="20" fill="#0c0f14"/>${clean ? '' : `<rect x="105" y="195" width="170" height="66" rx="8" fill="none" stroke="${c}" stroke-width="5"/>`}<text x="12" y="288" font-size="15" fill="#fff" opacity=".85" font-family="sans-serif">DEMO</text></svg>`);
@@ -306,7 +306,7 @@ async function openDetail(id, silent) {
   const r = state.rows.get(id); if (!r) return;
   state.selected = id;
   const d = $('detail'); d.classList.remove('hidden'); $('exportPanel').classList.add('hidden');
-  document.getElementById('side').classList.add('full');
+  { const sd = document.getElementById('side'); sd.classList.remove('mini'); sd.classList.add('full'); }
   const c = COLORS[r.type] || '#888';
   d.innerHTML = `<button class="back" id="dBack" type="button">${lang === 'ar' ? '→' : '←'} ${esc(tt('back'))}</button>
     <h2><span class="ico" style="width:38px;height:38px;border-radius:12px;border:1.5px solid ${c};background:${c}22;color:${c};display:inline-flex;align-items:center;justify-content:center">${svg(r.type, 22)}</span>${esc(tt(r.type))}<span class="badge ${r.status}" style="margin-inline-start:auto">${esc(tt(r.status))}</span></h2>
@@ -486,7 +486,7 @@ function activeFilterText() {
   return parts;
 }
 function openExport(bounds) {
-  const rows = exportRows(bounds), p = $('exportPanel'); $('detail').classList.add('hidden'); p.classList.remove('hidden'); document.getElementById('side').classList.add('full');
+  const rows = exportRows(bounds), p = $('exportPanel'); $('detail').classList.add('hidden'); p.classList.remove('hidden'); { const sd = document.getElementById('side'); sd.classList.remove('mini'); sd.classList.add('full'); }
   const km = (bounds.getNorthEast().distanceTo(L.latLng(bounds.getNorthEast().lat, bounds.getSouthWest().lng)) / 1000).toFixed(2), kn = (bounds.getNorthEast().distanceTo(L.latLng(bounds.getSouthWest().lat, bounds.getNorthEast().lng)) / 1000).toFixed(2);
   p.innerHTML = `<button class="back" id="xBack" type="button">${lang === 'ar' ? '→' : '←'} ${esc(tt('back'))}</button><h2>📄 ${esc(tt('pdfTitle'))}</h2>
     <div class="card"><div class="gt">${esc(tt('pdfFilters'))}</div><div class="chips">${activeFilterText().map((x) => `<span class="chip on">${esc(x)}</span>`).join('')}</div></div>
@@ -802,6 +802,8 @@ async function main() {
   $('liveToggle').onchange = drawVolunteers;
   document.querySelectorAll('.stabs button').forEach((b) => b.onclick = () => { state.side = b.dataset.st; document.querySelectorAll('.stabs button').forEach((x) => x.classList.toggle('on', x === b)); $('feed').classList.toggle('hidden', b.dataset.st !== 'feed'); $('list').classList.toggle('hidden', b.dataset.st !== 'list'); });
   $('side').addEventListener('click', (e) => { if (e.target.id === 'dBack' || e.target.id === 'xBack') $('side').classList.remove('full'); });
+  // phones: the bottom sheet can be lowered to its tab bar so the whole map is visible, and raised again
+  $('sideToggle').onclick = () => { const s = $('side'); const mini = s.classList.toggle('mini'); if (mini) s.classList.remove('full'); else if (!$('detail').classList.contains('hidden') || !$('exportPanel').classList.contains('hidden')) s.classList.add('full'); };
   $('btnNewUser').onclick = openUserForm;
   $('btnNoteAll').onclick = () => openNote(null);
   $('btnVolNote').onclick = () => { const u = state.users.find((x) => String(x.username).toLowerCase() === String(state.vol).toLowerCase()); if (u) openNote(u.username); };

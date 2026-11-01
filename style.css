@@ -133,6 +133,9 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .stabs { flex: none; display: flex; align-items: center; gap: 6px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
 .stabs button { padding: 7px 14px; border-radius: 11px; font-weight: 800; font-size: 14.5px; color: var(--mut); }
 .stabs button.on { background: rgba(229,203,101,.14); color: var(--gold); }
+.sdrag { display: none; width: 38px; height: 34px; border-radius: 10px; align-items: center; justify-content: center; background: rgba(255,255,255,.09); border: 1px solid var(--line); margin-inline-start: 8px; flex: none }
+.sdrag svg { width: 22px; height: 22px; fill: none; stroke: var(--gold); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s }
+.side.mini .sdrag svg { transform: rotate(180deg) }
 .stabs .cnt { margin-inline-start: auto; color: var(--mut); font-weight: 700; font-size: 13px; }
 .feed, .list { flex: 1; overflow: auto; min-height: 0; }
 .fi { display: flex; gap: 11px; padding: 12px 14px; border-bottom: 1px solid var(--line); cursor: pointer; text-align: start; width: 100%; align-items: flex-start; }
@@ -210,6 +213,9 @@ textarea { width: 100%; min-height: 70px; border-radius: 12px; background: rgba(
   .mapwrap { position: absolute; inset: 0; }
   .side { position: absolute; inset-inline: 0; bottom: 0; top: auto; width: auto; height: 38%; border-radius: 22px 22px 0 0; border-top: 1px solid var(--line); border-inline-start: 0; box-shadow: 0 -16px 40px rgba(0,0,0,.5); z-index: 40; }
   .side.full { height: 88%; }
+  .sdrag { display: inline-flex; }
+  .side.mini { height: auto; }
+  .side.mini > :not(.stabs) { display: none !important; }
   .tools.tl { top: 58px; } .tools.tr { top: 58px; }
   .tb span { display: none; } .tb#btnLayers span { display: inline; max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
   .rulerbar { top: 108px; }
