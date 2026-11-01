@@ -18,6 +18,7 @@ const S = {
   allVolunteers: ['كل المتطوعين', 'Tüm gönüllüler', 'All volunteers'],
   today: ['اليوم', 'Bugün', 'Today'], d7: ['٧ أيام', '7 gün', '7 days'], d30: ['٣٠ يوماً', '30 gün', '30 days'], all: ['الكل', 'Tümü', 'All'],
   liveShow: ['إظهار المتطوعين المباشرين', 'Canlı gönüllüleri göster', 'Show live volunteers'], liveHint: ['دوائر ذهبية (من وافق على المشاركة وتطبيقه مفتوح)', 'Altın daireler (paylaşmayı kabul edip uygulaması açık olanlar)', 'Gold circles (agreed to share, app open)'],
+  diskDb: ['قاعدة البيانات', 'Veritabanı', 'Database'], diskFiles: ['الصور', 'Fotoğraflar', 'Photos'], diskUsed: ['مستخدم', 'Kullanılan', 'Used'], diskLeft: ['متبقي', 'Kalan', 'Left'], mb: ['ميغا', 'MB', 'MB'], gb: ['غيغا', 'GB', 'GB'], diskTip: ['مساحة السيرفر', 'Sunucu alanı', 'Server space'],
   liveNow: ['الآن', 'Şimdi', 'Now'], seenAgo: ['آخر ظهور قبل {n}', 'Son görülme {n} önce', 'Last seen {n} ago'], neverSeen: ['لم يظهر بعد', 'Henüz görülmedi', 'Not seen yet'],
   min: ['د', 'dk', 'min'], hour: ['س', 'sa', 'h'], day: ['يوم', 'gün', 'd'],
   // types

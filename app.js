@@ -39,6 +39,7 @@ function applyLang() {
   document.querySelectorAll('[data-i-title]').forEach((e) => { e.title = tt(e.dataset.iTitle); });
   document.title = tt('appTitle');
   document.querySelectorAll('[data-lang]').forEach((b) => b.classList.toggle('on', b.dataset.lang === lang));
+  if (state.disk) renderDisk();
 }
 function fmtTime(iso) { try { return new Intl.DateTimeFormat(lang === 'ar' ? 'ar-SY-u-nu-latn' : lang, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso)); } catch (_) { return iso; } }
 function agoText(iso) {
@@ -48,7 +49,29 @@ function agoText(iso) {
   const n = s < 3600 ? Math.round(s / 60) + ' ' + tt('min') : s < 86400 ? Math.round(s / 3600) + ' ' + tt('hour') : Math.round(s / 86400) + ' ' + tt('day');
   return tt('seenAgo', { n });
 }
-function toast(msg) { const e = $('toast'); e.textContent = msg; e.classList.remove('hidden'); clearTimeout(toast._t); toast._t = setTimeout(() => e.classList.add('hidden'), 3200); }
+function toast(msg, ms = 3200) { const e = $('toast'); e.textContent = msg; e.classList.remove('hidden'); clearTimeout(toast._t); toast._t = setTimeout(() => e.classList.add('hidden'), ms); }
+// server space (Supabase Free plan): database + stored photos, used and left, in the header (administrators only)
+function fmtBytes(b) { const mb = Math.max(0, b) / 1048576; return mb >= 1024 ? (mb / 1024).toFixed(2) + ' ' + tt('gb') : mb.toFixed(mb < 10 ? 1 : 0) + ' ' + tt('mb'); }
+function diskRows() {
+  const d = state.disk; if (!d) return [];
+  return [[tt('diskDb'), d.db_bytes, (CFG.dbLimitMB || 500) * 1048576], [tt('diskFiles'), d.storage_bytes, (CFG.storageLimitMB || 1024) * 1048576]].map(([name, used, lim]) => ({ name, used: Number(used) || 0, lim, left: Math.max(0, lim - (Number(used) || 0)), pc: Math.min(100, (Number(used) || 0) / lim * 100) }));
+}
+function renderDisk() {
+  const rows = diskRows(), box = $('diskBox'), chip = $('diskChip'); if (!rows.length) return;
+  box.innerHTML = rows.map((r) => `<div class="dk${r.pc > 90 ? ' bad' : r.pc > 75 ? ' warn' : ''}"><b>${esc(r.name)}</b><span>${esc(tt('diskUsed'))} ${esc(fmtBytes(r.used))}</span><span class="l">${esc(tt('diskLeft'))} ${esc(fmtBytes(r.left))}</span><i style="--p:${r.pc.toFixed(1)}%"></i></div>`).join('');
+  box.title = tt('diskTip'); box.classList.remove('hidden');
+  const low = rows.reduce((a, b) => (a.left / a.lim < b.left / b.lim ? a : b));
+  chip.textContent = `💾 ${tt('diskLeft')} ${fmtBytes(low.left)}`; chip.classList.remove('hidden');
+  chip.onclick = () => toast(rows.map((r) => `${r.name}: ${tt('diskUsed')} ${fmtBytes(r.used)} · ${tt('diskLeft')} ${fmtBytes(r.left)}`).join('\n'), 6000);
+}
+async function loadDisk() {
+  if (!state.admin) { $('diskBox').classList.add('hidden'); $('diskChip').classList.add('hidden'); return; }
+  try {
+    if (DEMO) state.disk = { db_bytes: 63.4 * 1048576, storage_bytes: 212 * 1048576, storage_objects: 141 };
+    else { const { data, error } = await sb.rpc('admin_storage_usage'); if (error) throw error; state.disk = data; }
+    renderDisk();
+  } catch (e) { console.error(e); $('diskBox').classList.add('hidden'); $('diskChip').classList.add('hidden'); }
+}
 const ageDays = (r) => Math.max(0, Math.floor((Date.now() - new Date(r.detected_at).getTime()) / 86400000));
 const ageText = (r) => { const n = ageDays(r); return n < 1 ? tt('ageToday') : tt('ageLine', { n }); };
 const mapsLink = (r) => `https://www.google.com/maps?q=${r.lat},${r.lon}`;
@@ -746,13 +769,14 @@ async function startApp() {
   state.rows.clear(); state.fitted = false;
   await checkAdmin(); await load(); await loadUsers(); render(); subscribe(); route();
   loadPresence(); setInterval(() => { if (!$('view-map').classList.contains('hidden')) loadPresence(); }, 20000);
+  loadDisk(); setInterval(loadDisk, 5 * 60e3);
   setInterval(() => { renderFeed(); }, 60000);
   if (state.admin) renderSettings();
 }
 function showLogin() { $('app').classList.add('hidden'); $('login').classList.remove('hidden'); }
 async function refreshAll() {
   $('btnRefresh').disabled = true;
-  try { state.rows.clear(); await load(); await loadUsers(); await loadPresence(); render(); toast(tt('refreshed')); } finally { $('btnRefresh').disabled = false; }
+  try { state.rows.clear(); await load(); await loadUsers(); await loadPresence(); loadDisk(); render(); toast(tt('refreshed')); } finally { $('btnRefresh').disabled = false; }
 }
 async function main() {
   applyLang(); renderLayerPop && 0;
